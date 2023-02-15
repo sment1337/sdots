@@ -1,0 +1,2 @@
+#!/bin/sh
+top -bn2 | grep Cpu | tail -1 | awk '{print " " 100-$8 "% "}'

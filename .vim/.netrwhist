@@ -1,0 +1,8 @@
+let g:netrw_dirhistmax  =10
+let g:netrw_dirhistcnt =6
+let g:netrw_dirhist_6='/home/sment/void-dots/.config/polybar'
+let g:netrw_dirhist_5='/home/sment/void-dots/.config'
+let g:netrw_dirhist_4='/home/sment/void-dots'
+let g:netrw_dirhist_3='/home/sment'
+let g:netrw_dirhist_2='/home/sment/.config'
+let g:netrw_dirhist_1='/home/sment/.config/polybar'
