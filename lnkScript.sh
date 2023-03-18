@@ -1,5 +1,8 @@
-sudo pacman -S terminator i3-wm i3status sddm
-sudo systemctl enable nitrogen polybar upower python-pip wget sddm.service
+sudo pacman -S terminator i3-wm i3status polybar upower python-pip base-devel wget sddm nitrogen 
+sudo systemctl enable sddm.service
+git clone https://aur.archlinux.org/yay.git
+makepkg -si
+yay -S ttf-jetbrains-mono-nerd
 pip install bs4
 rm -rf .zshrc
 ln -s sdots/.zshrc ./.zshrc
