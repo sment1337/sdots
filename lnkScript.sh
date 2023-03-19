@@ -14,4 +14,12 @@ mkdir /home/USERNAME/.config
 ln -s /home/USERNAME/sdots/i3 .config/i3
 ln -s /home/USERNAME/sdots/polybar .config/polybar
 ln -s /home/USERNAME/sdots/nitrogen/ .config/nitrogen
-sudo reboot now
+
+# Theme stuff. First make Sugar Candy Backgrounds folder open to write images
+sudo chmod -R 777 /usr/share/sddm/themes/Sugar-Candy/Backgrounds
+# Substituting Sugar Candy for sddm
+cat /usr/lib/sddm/sddm.conf.d/default.conf | sed 's/^Current=/Current=Sugar-Candy/g' | sudo tee /usr/lib/sddm/sddm.conf.d/default.conf
+# Substituting BG in sugar candy
+cat /usr/share/sddm/themes/Sugar-Candy/theme.conf | sed '/^Background/d' | sed '/General/a Background='\''Backgrounds/BG.jpg'\''' | sudo tee /usr/share/sddm/themes/Sugar-Candy/theme.conf
+
+#sudo reboot now
