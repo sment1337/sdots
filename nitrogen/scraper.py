@@ -19,7 +19,9 @@ def scrapeClass(url, html_class):
     return hrefs
 
 if __name__ == "__main__":
-    # first get rid of old images
+    # Set the background to make sure its the same as the sddm one
+    subprocess.run(['nitrogen', '--set-zoom-fill', 'BG.jpg'], stdout=subprocess.PIPE).stdout.decode('UTF8')
+    # then get rid of old images
     flist = [n for n in os.listdir() if '.jpg' in n]
     [os.remove(n) for n in flist] 
 
@@ -33,6 +35,8 @@ if __name__ == "__main__":
     downloadLinks = scrapeClass(url+subURL, 'download')
     imageURL = [n for n in downloadLinks if '1920x1080' in n][0]
     imageURL = imageURL.split(subURL)[1]
+    # downloading the same image in two locations: for i3 and sddm. 
+    #    /!\ Attention: don't forget to make `sudo chmod -R 777 /usr/share/sddm/themes/Sugar-Candy/Backgrounds/`
     subprocess.run(['wget', '-O', 'BG.jpg', url+subURL+imageURL])
-    subprocess.run(['nitrogen', '--set-zoom-fill', 'BG.jpg'], stdout=subprocess.PIPE).stdout.decode('UTF8')
+    subprocess.run(['wget', '-O', '/usr/share/sddm/themes/Sugar-Candy/Backgrounds/BG.jpg', url+subURL+imageURL])
     #import ipdb; ipdb.set_trace(context=7)
