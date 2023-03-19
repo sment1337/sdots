@@ -25,4 +25,9 @@ python .config/nitrogen/scraper.py
 sudo chown root:root /usr/share/sddm/themes/Sugar-Candy/Backgrounds/BG.jpg
 sudo chmod -R 777 /usr/share/sddm/themes/Sugar-Candy/Backgrounds/BG.jpg
 
+# fixing the netowrk scripts
+wlaneth=$(ip a | grep BROADCAST | awk '{print $2}' | sed 's/://g')
+sed -i "s/wlp3s0b1/$wlaneth/g" .config/polybar/config.ini
+sed -i "s/enp2s0f0/$wlaneth/g" .config/polybar/scripts/ip
+
 #sudo reboot now
