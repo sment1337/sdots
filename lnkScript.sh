@@ -22,5 +22,6 @@ cat /usr/lib/sddm/sddm.conf.d/default.conf | sed 's/^Current=/Current=Sugar-Cand
 # Substituting BG in sugar candy
 cat /usr/share/sddm/themes/Sugar-Candy/theme.conf | sed '/^Background/d' | sed '/General/a Background='\''Backgrounds/BG.jpg'\''' | sudo tee /usr/share/sddm/themes/Sugar-Candy/theme.conf
 python .config/nitrogen/scraper.py
+sudo chmod -R 777 /usr/share/sddm/themes/Sugar-Candy/Backgrounds/BG.jpg
 
 #sudo reboot now
