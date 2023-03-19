@@ -5,7 +5,7 @@ git clone https://aur.archlinux.org/yay.git
 cd yay
 printf 'Y\nY\n' | makepkg -si
 cd ~
-printf 'Y\n' | yay -S ttf-jetbrains-mono-nerd autojump sddm-theme-sugar-candy-git
+printf 'Y\nN\nN\nY\n' | yay -S ttf-jetbrains-mono-nerd autojump sddm-theme-sugar-candy-git
 pip install bs4
 ln -s sdots/.vim ./.vim
 ln -s sdots/.zshrc ./.zshrc
