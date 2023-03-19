@@ -1,8 +1,10 @@
 sudo pacman -S terminator i3-wm i3status polybar upower python-pip base-devel wget sddm nitrogen 
 sudo systemctl enable sddm.service
 git clone https://aur.archlinux.org/yay.git
+cd yay
 makepkg -si
-yay -S ttf-jetbrains-mono-nerd
+cd ~
+yay -S ttf-jetbrains-mono-nerd autojump
 pip install bs4
 rm -rf .zshrc
 ln -s sdots/.zshrc ./.zshrc
