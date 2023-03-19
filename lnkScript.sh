@@ -10,6 +10,7 @@ pip install bs4
 ln -s sdots/.vim ./.vim
 ln -s sdots/.zshrc ./.zshrc
 ln -s sdots/.tmux.conf ./.tmux.conf
+mkdir /home/USERNAME/.config
 ln -s /home/USERNAME/sdots/i3 .config/i3
 ln -s /home/USERNAME/sdots/polybar .config/polybar
 ln -s /home/USERNAME/sdots/nitrogen/ .config/nitrogen
