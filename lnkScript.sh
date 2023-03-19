@@ -3,7 +3,7 @@ printf '1\nY\n' | sudo pacman -S terminator i3-wm i3status polybar upower python
 sudo systemctl enable sddm.service
 git clone https://aur.archlinux.org/yay.git
 cd yay
-printf 'Y\n' | makepkg -si
+printf 'Y\nY\n' | makepkg -si
 cd ~
 printf 'Y\n' | yay -S ttf-jetbrains-mono-nerd autojump
 pip install bs4
