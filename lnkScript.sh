@@ -14,6 +14,7 @@ mkdir /home/USERNAME/.config
 ln -s /home/USERNAME/sdots/i3 .config/i3
 ln -s /home/USERNAME/sdots/polybar .config/polybar
 ln -s /home/USERNAME/sdots/nitrogen/ .config/nitrogen
+ln -s /home/USERNAME/sdots/rofi/ .config/rofi
 
 # Theme stuff. First make Sugar Candy Backgrounds folder open to write images
 sudo chmod -R 777 /usr/share/sddm/themes/Sugar-Candy/Backgrounds
