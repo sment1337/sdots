@@ -195,3 +195,4 @@ bindsym $mod+r mode "resize"
 exec_always --no-startup-id $HOME/.config/polybar/launch.sh
 #exec --no-startup-id nitrogen --set-zoom-fill ~/Downloads/1366x768.jpg
 exec --no-startup-id python3 $HOME/.config/nitrogen/scraper.py
+#exec --no-startup-id picom -b -i 0.9
