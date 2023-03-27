@@ -1,5 +1,5 @@
 rm -rf .vim .zshrc .tmux.conf .config
-printf '1\nY\n' | sudo pacman -S terminator i3-wm i3status xorg-xrandr picom polybar upower python-pip base-devel wget sddm nitrogen
+printf '1\nY\n' | sudo pacman -S terminator i3-wm i3status xorg-xrandr picom polybar upower python-pip base-devel wget sddm nitrogen rofi
 sudo systemctl enable sddm.service
 git clone https://aur.archlinux.org/yay.git
 cd yay
