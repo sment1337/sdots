@@ -261,3 +261,5 @@ if [ -f /etc/zsh_command_not_found ]; then
     . /etc/zsh_command_not_found
 fi
 . /usr/share/autojump/autojump.zsh
+
+export RANGER_LOAD_DEFAULT_RC="FALSE"
