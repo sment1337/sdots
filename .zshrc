@@ -248,6 +248,7 @@ alias l='ls -CF'
 alias cht='f() { curl cht.sh/$1 };f'
 alias power='upower -i /org/freedesktop/UPower/devices/battery_BAT0'
 alias bl='f() { echo $1 | sudo tee /sys/class/leds/smc::kbd_backlight/brightness };f'
+alias pfzf="fzf --preview='less {}' --bind shift-up:preview-page-up,shift-down:preview-page-down"
 
 # enable auto-suggestions based on the history
 if [ -f /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]; then
