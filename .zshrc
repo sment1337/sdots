@@ -248,7 +248,7 @@ alias l='ls -CF'
 alias cht='f() { curl cht.sh/$1 };f'
 alias power='upower -i /org/freedesktop/UPower/devices/battery_BAT0'
 alias bl='f() { echo $1 | sudo tee /sys/class/leds/smc::kbd_backlight/brightness };f'
-alias pfzf="fzf --preview='less {}' --bind shift-up:preview-page-up,shift-down:preview-page-down"
+alias pfzf="fzf --preview='less {}' --bind pgdn:preview-page-down,pgup:preview-page-up"
 
 # enable auto-suggestions based on the history
 if [ -f /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]; then
@@ -261,6 +261,9 @@ fi
 if [ -f /etc/zsh_command_not_found ]; then
     . /etc/zsh_command_not_found
 fi
+
 . /usr/share/autojump/autojump.zsh
 
 export RANGER_LOAD_DEFAULT_RC="FALSE"
+
+bindkey -v
