@@ -1,5 +1,6 @@
 let g:netrw_dirhistmax  =10
-let g:netrw_dirhistcnt =6
+let g:netrw_dirhistcnt =7
+let g:netrw_dirhist_7='/home/sment/.tmux/plugins/tmux-sensible'
 let g:netrw_dirhist_6='/home/sment/void-dots/.config/polybar'
 let g:netrw_dirhist_5='/home/sment/void-dots/.config'
 let g:netrw_dirhist_4='/home/sment/void-dots'
