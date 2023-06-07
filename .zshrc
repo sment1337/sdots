@@ -267,3 +267,6 @@ fi
 export RANGER_LOAD_DEFAULT_RC="FALSE"
 
 #bindkey -v
+
+source /usr/share/doc/fzf/examples/key-bindings.zsh
+source /usr/share/doc/fzf/examples/completion.zsh
