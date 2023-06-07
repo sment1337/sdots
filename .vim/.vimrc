@@ -9,8 +9,8 @@ set viminfo='20,\"50	" read/write a .viminfo file, don't store more
 			" than 50 lines of registers
 set history=50		" keep 50 lines of command line history
 set ruler		" show the cursor position all the time
-"set relativenumber
-set number
+set relativenumber
+"set number
 "set list
 set hls
 set softtabstop=0
