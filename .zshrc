@@ -270,3 +270,15 @@ export RANGER_LOAD_DEFAULT_RC="FALSE"
 
 source /usr/share/doc/fzf/examples/key-bindings.zsh
 source /usr/share/doc/fzf/examples/completion.zsh
+
+
+# To have preview in fzf
+_fzf_comprun() {
+  local command=$1
+  shift
+
+  case "$command" in
+    cd)           fzf "$@" --preview 'tree {} -C -L 1 -a' ;;
+    *)            fzf "$@" ;;
+  esac
+}

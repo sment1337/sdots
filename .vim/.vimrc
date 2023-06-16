@@ -19,6 +19,14 @@ set autoindent
 set statusline=%<%F\ %h%m%r\ %y%=%{v:register}\ %-14.(%l/%L,%c%V%)\ %P
 set laststatus=2
 set title
+
+call plug#begin()
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+Plug 'junegunn/fzf.vim'
+call plug#end()
+set rtp+=/usr/bin/fzf
+map \l :Lines<CR>
+
 set lcs=tab:>\ ,trail:~,nbsp:_,eol:$
 
 " Only do this part when compiled with support for autocommands
@@ -72,3 +80,4 @@ endif
 " Don't wake up system with blinking cursor:
 " http://www.linuxpowertop.org/known.php
 let &guicursor = &guicursor . ",a:blinkon0"
+
