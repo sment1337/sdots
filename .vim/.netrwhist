@@ -1,5 +1,6 @@
 let g:netrw_dirhistmax  =10
-let g:netrw_dirhistcnt =5
+let g:netrw_dirhistcnt =6
+let g:netrw_dirhist_6='/home/sment/resilio/folders/DripBox/soulisUtils/Spice/dioled'
 let g:netrw_dirhist_5='/home/sment'
 let g:netrw_dirhist_4='/home/sment/sdots/.vim/autoload'
 let g:netrw_dirhist_3='/home/sment'
@@ -9,4 +10,3 @@ let g:netrw_dirhist_0='/home/sment'
 let g:netrw_dirhist_9='/home/sment/sdots/tmux'
 let g:netrw_dirhist_8='/home/sment'
 let g:netrw_dirhist_7='/home/sment/.tmux/plugins/tmux-sensible'
-let g:netrw_dirhist_6='/home/sment/void-dots/.config/polybar'
