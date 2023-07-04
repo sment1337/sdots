@@ -279,6 +279,6 @@ _fzf_comprun() {
 
   case "$command" in
     cd)           fzf "$@" --preview 'tree {} -C -L 1 -a' ;;
-    *)            fzf "$@" ;;
+    *)            fzf "$@" --preview="batcat {}" --bind pgdn:preview-page-down,pgup:preview-page-up --border=rounded ;;
   esac
 }
