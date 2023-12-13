@@ -1,5 +1,7 @@
 let g:netrw_dirhistmax  =10
-let g:netrw_dirhistcnt =0
+let g:netrw_dirhistcnt =2
+let g:netrw_dirhist_2='/home/sment'
+let g:netrw_dirhist_1='/home/sment/resilio/folders/DripBox/soulisUtils'
 let g:netrw_dirhist_0='/home/sment'
 let g:netrw_dirhist_9='/home/sment/resilio/folders/DripBox/FPGA/counterExample'
 let g:netrw_dirhist_8='/home/sment'
@@ -8,5 +10,3 @@ let g:netrw_dirhist_6='/home/sment/resilio/folders/DripBox/soulisUtils/Spice/dio
 let g:netrw_dirhist_5='/home/sment'
 let g:netrw_dirhist_4='/home/sment/sdots/.vim/autoload'
 let g:netrw_dirhist_3='/home/sment'
-let g:netrw_dirhist_2='/home/sment/resilio/folders/DripBox/soulisUtils/Spice/SRAM_TFT'
-let g:netrw_dirhist_1='/home/sment/resilio/folders/DripBox/soulisUtils/Spice/pyFitSpice'

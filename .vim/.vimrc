@@ -27,6 +27,8 @@ Plug 'Valloric/YouCompleteMe'
 call plug#end()
 set rtp+=/usr/bin/fzf
 map \l :Lines<CR>
+nnoremap \g :Files %:p:h<CR>
+map \d :put=strftime('%F')<CR>
 
 set lcs=tab:>\ ,trail:~,nbsp:_,eol:$
 
