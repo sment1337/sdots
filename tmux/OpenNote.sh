@@ -1,6 +1,6 @@
 #!/usr/bin/zsh
 
-echo 'type search keyword or regexp:'
+echo 'type search keyword or regexp (/!\ Note: use -e ASDASD to do or search):'
 
 read var1
 
