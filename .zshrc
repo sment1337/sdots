@@ -241,7 +241,7 @@ if [ -x /usr/bin/dircolors ]; then
 fi
 
 # some more ls aliases
-alias ll='ls -ltra --color=auto'
+alias ll='ls -ltrah --color=auto'
 alias vi='vim -u ~/.vim/.vimrc'
 alias la='ls -A'
 alias l='ls -CF'
@@ -249,6 +249,7 @@ alias cht='f() { curl cht.sh/$1 };f'
 alias power='upower -i /org/freedesktop/UPower/devices/battery_BAT0'
 alias bl='f() { echo $1 | sudo tee /sys/class/leds/smc::kbd_backlight/brightness };f'
 alias pfzf="fzf --preview='less {}' --bind pgdn:preview-page-down,pgup:preview-page-up"
+alias port='f() {sudo nmap -sU $(dig -4 +short myip.opendns.com @resolver1.opendns.com) -p $1}; f'
 
 # enable auto-suggestions based on the history
 if [ -f /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]; then
