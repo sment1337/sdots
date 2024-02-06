@@ -29,6 +29,7 @@ set rtp+=/usr/bin/fzf
 map \l :Lines<CR>
 nnoremap \g :Files %:p:h<CR>
 map \d :put=strftime('%F')<CR> \| :norm 0i## 
+noremap \p :set list!
 
 set lcs=tab:>\ ,trail:~,nbsp:_,eol:$
 
