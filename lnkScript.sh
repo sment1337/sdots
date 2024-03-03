@@ -6,10 +6,10 @@ cd yay
 printf 'Y\nY\n' | makepkg -si
 cd ~
 printf 'Y\nN\nN\nY\n' | yay -S ttf-jetbrains-mono-nerd autojump sddm-theme-sugar-candy-git
-pip install bs4
+pipx install bs4
 ln -s sdots/.vim ./.vim
 ln -s sdots/.zshrc ./.zshrc
-ln -s sdots/.tmux.conf ./.tmux.conf
+ln -s sdots/tmux/.tmux.conf ./.tmux.conf
 mkdir /home/sment/.config
 ln -s /home/sment/sdots/i3 .config/i3
 ln -s /home/sment/sdots/polybar .config/polybar
