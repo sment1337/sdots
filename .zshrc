@@ -251,6 +251,7 @@ alias bl='f() { echo $1 | sudo tee /sys/class/leds/smc::kbd_backlight/brightness
 alias pfzf="fzf --preview='less {}' --bind pgdn:preview-page-down,pgup:preview-page-up"
 alias port='f() {sudo nmap -sU $(dig -4 +short myip.opendns.com @resolver1.opendns.com) -p $1}; f'
 alias brightness='f() {echo $1 | sudo tee /sys/class/backlight/gmux_backlight/brightness};f'
+alias qn="tmux new-session -E 'sh $HOME/sdots/tmux/OpenNote.sh'"
 
 # enable auto-suggestions based on the history
 if [ -f /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]; then
@@ -268,12 +269,6 @@ fi
 
 export RANGER_LOAD_DEFAULT_RC="FALSE"
 
-#bindkey -v
-
-source /usr/share/doc/fzf/examples/key-bindings.zsh
-source /usr/share/doc/fzf/examples/completion.zsh
-
-
 # To have preview in fzf
 _fzf_comprun() {
   local command=$1
@@ -284,3 +279,6 @@ _fzf_comprun() {
     *)            fzf "$@" --preview="batcat {}" --bind pgdn:preview-page-down,pgup:preview-page-up --border=rounded ;;
   esac
 }
+
+source /usr/share/doc/fzf/examples/key-bindings.zsh
+source /usr/share/doc/fzf/examples/completion.zsh
