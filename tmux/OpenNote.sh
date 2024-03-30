@@ -5,7 +5,7 @@ echo 'type search keyword or regexp (/!\ Note: use -e ASDASD to do or search):'
 read var1
 
 #var2=$(grep -rnw 'resilio/folders/DripBox/QownNotes' -e $var1 | fzf) #| cut -d":" -f1,2 
-var2=$(egrep --recursive --with-filename --line-number --binary-files=without-match "$var1" 'DripBox/QownNotes' | fzf)
+var2=$(egrep --recursive --with-filename --line-number --binary-files=without-match "$var1" '/home/sment/DripBox/QownNotes' | fzf)
 
 if [ -z "$var2" ]; then
 	echo "empty, quitting"
