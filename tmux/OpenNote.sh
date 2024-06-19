@@ -4,7 +4,7 @@ echo 'type search keyword or regexp (/!\ Note: use -e ASDASD to do or search):'
 
 read var1
 
-var2=$(grep -rnw 'resilio/folders/DripBox/QownNotes' -e $var1 | fzf) #| cut -d":" -f1,2 
+var2=$(grep -rnw 'DripBox/QownNotes' -e $var1 | fzf) #| cut -d":" -f1,2 
 
 path=$(echo $var2 | cut -d":" -f1)
 line=$(echo $var2 | cut -d":" -f2)

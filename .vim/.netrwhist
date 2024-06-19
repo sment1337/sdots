@@ -1,4 +1,5 @@
 let g:netrw_dirhistmax  =10
+<<<<<<< Updated upstream
 let g:netrw_dirhistcnt =6
 let g:netrw_dirhist_6='/home/USERNAME'
 let g:netrw_dirhist_5='/home'
@@ -6,7 +7,19 @@ let g:netrw_dirhist_4='/home/USERNAME'
 let g:netrw_dirhist_3='/home/USERNAME/openvpn'
 let g:netrw_dirhist_2='/home/USERNAME'
 let g:netrw_dirhist_1='/home/USERNAME/resilio/folders/DripBox/soulisUtils'
+=======
+let g:netrw_dirhistcnt =1
+let g:netrw_dirhist_1='/Users/USERNAME/sdots'
+>>>>>>> Stashed changes
 let g:netrw_dirhist_0='/home/USERNAME'
 let g:netrw_dirhist_9='/home/USERNAME/resilio/folders/DripBox/FPGA/counterExample'
 let g:netrw_dirhist_8='/home/USERNAME'
 let g:netrw_dirhist_7='/home/USERNAME/resilio/folders/DripBox/FPGA/counterExample'
+<<<<<<< Updated upstream
+=======
+let g:netrw_dirhist_6='/home/USERNAME/resilio/folders/DripBox/soulisUtils/Spice/dioled'
+let g:netrw_dirhist_5='/home/USERNAME'
+let g:netrw_dirhist_4='/home/USERNAME/sdots/.vim/autoload'
+let g:netrw_dirhist_3='/home/USERNAME'
+let g:netrw_dirhist_2='/home/USERNAME/resilio/folders/DripBox/soulisUtils/Spice/SRAM_TFT'
+>>>>>>> Stashed changes
