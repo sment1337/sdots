@@ -38,5 +38,5 @@ if __name__ == "__main__":
     # downloading the same image in two locations: for i3 and sddm. 
     #    /!\ Attention: don't forget to make `sudo chmod -R 777 /usr/share/sddm/themes/Sugar-Candy/Backgrounds/`
     subprocess.run(['wget', '-O', 'BG.jpg', url+subURL+imageURL])
-    subprocess.run(['wget', '-O', '/usr/share/sddm/themes/Sugar-Candy/Backgrounds/BG.jpg', url+subURL+imageURL])
+    #subprocess.run(['wget', '-O', '~/BG.jpg', url+subURL+imageURL])
     #import ipdb; ipdb.set_trace(context=7)
