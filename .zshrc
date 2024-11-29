@@ -270,10 +270,6 @@ export RANGER_LOAD_DEFAULT_RC="FALSE"
 
 #bindkey -v
 
-source /usr/share/doc/fzf/examples/key-bindings.zsh
-source /usr/share/doc/fzf/examples/completion.zsh
-
-
 # To have preview in fzf
 _fzf_comprun() {
   local command=$1
@@ -284,3 +280,5 @@ _fzf_comprun() {
     *)            fzf "$@" --preview="batcat {}" --bind pgdn:preview-page-down,pgup:preview-page-up --border=rounded ;;
   esac
 }
+
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
