@@ -1,4 +1,5 @@
 #!/usr/bin/zsh
+#NOTE: There should not be a space in the path used here (e.g.: `~/Downloads/From\ Sapien` won't work, needs to be `~/Downloads/FromSapien`)
 
 default_path="/Users/tcharisoulis/Desktop/PDKdir/gn22fdx+"
 path=${1:-$default_path}

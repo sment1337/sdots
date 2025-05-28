@@ -1,5 +1,6 @@
 let g:netrw_dirhistmax  =10
-let g:netrw_dirhistcnt =4
+let g:netrw_dirhistcnt =5
+let g:netrw_dirhist_5='/Users/tcharisoulis'
 let g:netrw_dirhist_4='/Users/thomascharisoulis'
 let g:netrw_dirhist_3='/Users/thomascharisoulis/sdots/tmux'
 let g:netrw_dirhist_2='/Users/thomascharisoulis'
@@ -9,4 +10,3 @@ let g:netrw_dirhist_9='/home/sment/resilio/folders/DripBox/FPGA/counterExample'
 let g:netrw_dirhist_8='/home/sment'
 let g:netrw_dirhist_7='/home/sment/resilio/folders/DripBox/FPGA/counterExample'
 let g:netrw_dirhist_6='/home/sment/resilio/folders/DripBox/soulisUtils/Spice/dioled'
-let g:netrw_dirhist_5='/home/sment'

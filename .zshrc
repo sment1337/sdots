@@ -263,15 +263,14 @@ if [ -f /etc/zsh_command_not_found ]; then
     . /etc/zsh_command_not_found
 fi
 
-. /usr/share/autojump/autojump.zsh
+. $HOME/homebrew/Cellar/autojump/22.5.3_3/share/autojump/autojump.zsh
 
 export RANGER_LOAD_DEFAULT_RC="FALSE"
 
 #bindkey -v
 
-source /usr/share/doc/fzf/examples/key-bindings.zsh
-source /usr/share/doc/fzf/examples/completion.zsh
-
+source $HOME/homebrew/Cellar/fzf/0.61.3/shell/key-bindings.zsh
+source $HOME/homebrew/Cellar/fzf/0.61.3/shell/completion.zsh
 
 # To have preview in fzf
 _fzf_comprun() {
@@ -283,3 +282,5 @@ _fzf_comprun() {
     *)            fzf "$@" --preview="batcat {}" --bind pgdn:preview-page-down,pgup:preview-page-up --border=rounded ;;
   esac
 }
+export PATH="$HOME/homebrew/bin:$HOME/homebrew/sbin:$PATH"
+export PATH=/usr/local/ffmpeg/bin/:$PATH
