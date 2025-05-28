@@ -27,9 +27,11 @@ Plug 'junegunn/fzf.vim'
 call plug#end()
 set rtp+=/usr/bin/fzf
 map \l :Lines<CR>
-nnoremap \g :Files %:p:h<CR>
+noremap \g :Files %:p:h<CR>
 map \d :put=strftime('%F')<CR> \| :norm 0i## 
+map \O :norm o* {ODY} 
 noremap \p :set list!
+noremap \h :set hls!
 
 set lcs=tab:>\ ,trail:~,nbsp:_,eol:$
 
