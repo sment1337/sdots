@@ -25,7 +25,7 @@ Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plug 'junegunn/fzf.vim'
 " Plug 'Valloric/YouCompleteMe'
 call plug#end()
-set rtp+=/usr/bin/fzf
+set rtp+=/opt/homebrew/bin/fzf
 map \l :Lines<CR>
 noremap \g :Files %:p:h<CR>
 map \d :put=strftime('%F')<CR> \| :norm 0i## 
