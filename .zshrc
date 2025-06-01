@@ -284,3 +284,20 @@ _fzf_comprun() {
 }
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+# pyenv section
+# Load pyenv automatically by appending
+# the following to
+# ~/.bash_profile if it exists, otherwise ~/.profile (for login shells)
+# and ~/.bashrc (for interactive shells) :
+
+export PYENV_ROOT="$HOME/.pyenv"
+[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+source <(pyenv init - zsh)
+
+# Restart your shell for the changes to take effect.
+
+# Load pyenv-virtualenv automatically by adding
+# the following to ~/.bashrc:
+
+source <(pyenv virtualenv-init -)
