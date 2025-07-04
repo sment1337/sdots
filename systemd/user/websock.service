@@ -1,0 +1,18 @@
+[Unit]
+Description=Setup websockify as a service
+After=network.target
+
+[Service]
+ExecStart=/home/sment/.pyenv/shims/websockify -D --web=/usr/share/webapps/novnc --cert=/home/sment/novnc.pem 6080 localhost:5901
+User=sment
+Group=sment
+
+# Restart every >2 seconds to avoid StartLimitInterval failure
+RestartSec=5
+Restart=always
+
+StandardOutput=append:/var/log/websock/stdout.log
+StandardError=append:/var/log/websock/stderr.log
+
+[Install]
+WantedBy=default.target
