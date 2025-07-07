@@ -29,7 +29,7 @@ endif
 call plug#begin()
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
-Plug 'Valloric/YouCompleteMe'
+" Plug 'Valloric/YouCompleteMe'
 call plug#end()
 set rtp+=/usr/bin/fzf
 map \l :Lines<CR>
