@@ -4,7 +4,7 @@ echo 'type search keyword or regexp (/!\ Note: use -e ASDASD to do or search):'
 
 read var1
 
-var2=$(egrep --recursive --with-filename --line-number --binary-files=without-match --exclude-dir=*CIE*calc* $var1 '/mnt/d/DripBox/QownNotes' | fzf --preview-window 'right,70%' --bind "ctrl-p:preview(sh ~/sdots/tmux/previewNote.sh {} $var1),ctrl-/:change-preview-window(hidden),pgdn:preview-page-down,pgup:preview-page-up")
+var2=$(egrep --recursive --with-filename --line-number --binary-files=without-match --exclude-dir=*CIE*calc* $var1 ~/DripBox/QownNotes | fzf --preview-window 'right,70%' --bind "ctrl-p:preview(sh ~/sdots/tmux/previewNote.sh {} $var1),ctrl-/:change-preview-window(hidden),pgdn:preview-page-down,pgup:preview-page-up")
 
 if [ -z "$var2" ]; then
 	echo "empty, quitting"
