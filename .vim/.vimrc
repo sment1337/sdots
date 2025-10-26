@@ -36,6 +36,8 @@ map \l :Lines<CR>
 nnoremap \g :Files %:p:h<CR>
 map \d :put=strftime('%F')<CR> \| :norm 0i## 
 noremap \p :set list!
+noremap \s :set paste!
+noremap \h :set hls!
 
 set lcs=tab:>\ ,trail:~,nbsp:_,eol:$
 

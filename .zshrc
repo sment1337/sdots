@@ -301,3 +301,6 @@ source <(pyenv init - zsh)
 # the following to ~/.bashrc:
 
 source <(pyenv virtualenv-init -)
+
+# Added by LM Studio CLI tool (lms)
+export PATH="$PATH:/home/sment/.lmstudio/bin"
