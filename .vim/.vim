@@ -1,0 +1,1 @@
+/home/sment/sdots/.vim/

@@ -23,7 +23,6 @@ set title
 call plug#begin()
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plug 'junegunn/fzf.vim'
-Plug 'Valloric/YouCompleteMe'
 call plug#end()
 set rtp+=/usr/bin/fzf
 map \l :Lines<CR>

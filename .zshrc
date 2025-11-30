@@ -283,3 +283,8 @@ _fzf_comprun() {
     *)            fzf "$@" --preview="batcat {}" --bind pgdn:preview-page-down,pgup:preview-page-up --border=rounded ;;
   esac
 }
+
+# opencode
+export PATH=/home/sment/.opencode/bin:$PATH
+
+. "$HOME/.local/bin/env"
