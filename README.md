@@ -1,4 +1,7 @@
-# `setup_environment.sh`
+# Repository Purpose
+This repository is my personal **sdots** collection used across various Linux distributions. It contains configuration files, scripts, and dotfiles that I maintain and share.
+
+## `setup_environment.sh`
 
 This lightweight Bash script automates the initial environment setup for the **sdots** project and its dependencies.
 
@@ -28,6 +31,3 @@ After running, you may need to log out and back in for the shell change to take 
 - The script assumes an Ubuntu/Debian‑based system with `apt`. For other distributions, modify the package manager commands accordingly.
 - If you already have Lazygit installed, the script will skip its installation step.
 - All downloads are performed over HTTPS and verified via GitHub’s API for the latest release tag.
-
-## Repository Purpose
-This repository is my personal **sdots** collection used across various Linux distributions. It contains configuration files, scripts, and dotfiles that I maintain and share.
