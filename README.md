@@ -1,6 +1,13 @@
 # Repository Purpose
 This repository is my personal **sdots** collection used across various Linux distributions. It contains configuration files, scripts, and dotfiles that I maintain and share.
 
+## Quick Install with curl
+You can bootstrap a fresh system by running the following one‑liner:
+```bash
+curl -fsSL https://raw.githubusercontent.com/sment1337/sdots/master/setup_environment.sh | bash
+```
+The script will prompt for sudo once, update your package lists, install required tools, clone this repo into `$HOME/sdots`, set up symlinks and switch your default shell to Zsh.
+
 ## `setup_environment.sh`
 
 This lightweight Bash script automates the initial environment setup for the **sdots** project and its dependencies.
