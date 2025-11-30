@@ -53,7 +53,13 @@ if ! command -v lazygit &>/dev/null; then
         else
             source /etc/os-release 2>/dev/null || true
             OS=${ID:-$(uname -s | tr '[:upper:]' '[:lower:]')}
-        fi
+fi
+# Ensure local bin is in PATH for uv and other binaries
+if ! echo "$PATH" | grep -q "${HOME}/.local/bin"; then
+    export PATH="${HOME}/.local/bin:$PATH"
+    echo 'Added ${HOME}/.local/bin to PATH'
+fi
+
         ARCH=$(uname -m)
         case "$ARCH" in
             x86_64|amd64) ARCH="amd64";;
