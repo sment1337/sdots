@@ -12,6 +12,8 @@ if ! var2=$(egrep -rnI \
   --exclude-dir=.git \
   --exclude-dir=venv \
   --exclude-dir=.venv \
+  --exclude-dir=CIEenv \
+  --exclude-dir=.ipynb_checkpoints \
   "$var1" ~/DripBox/QownNotes | fzf --preview-window 'right,40%' --bind "ctrl-p:preview(sh $HOME/sdots/tmux/preview.sh {}),ctrl-z:change-preview-window(hidden)") 
 then 
     echo "Search cancelled"
