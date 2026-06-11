@@ -286,3 +286,16 @@ _fzf_comprun() {
 }
 export PATH=/opt/homebrew/bin:$PATH
 export PATH=/usr/local/ffmpeg/bin/:$PATH
+
+# Added by LM Studio CLI (lms)
+export PATH="$PATH:/Users/tcharisoulis/.lmstudio/bin"
+# End of LM Studio CLI section
+
+export PATH="/Users/tcharisoulis/.local/bin:$PATH"
+
+# Set DISPLAY for XQuartz
+export DISPLAY=:0
+# Only sync xauth if XQuartz is running (avoids ~5s startup hang)
+if pgrep -q Xquartz; then
+    xauth add $(xauth list 2>/dev/null | head -1) 2>/dev/null
+fi
