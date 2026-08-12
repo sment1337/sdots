@@ -24,14 +24,15 @@ call plug#begin()
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plug 'junegunn/fzf.vim'
 " Plug 'Valloric/YouCompleteMe'
+Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': ['markdown', 'vim-plug']}
 call plug#end()
 set rtp+=/opt/homebrew/bin/fzf
 map \l :Lines<CR>
 noremap \g :Files %:p:h<CR>
 map \d :put=strftime('%F')<CR> \| :norm 0i## 
-map \O :norm o* {ODY} 
 noremap \p :set list!
 noremap \h :set hls!
+noremap \w :MarkdownPreviewToggle
 
 set lcs=tab:>\ ,trail:~,nbsp:_,eol:$
 
