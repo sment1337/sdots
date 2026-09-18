@@ -88,3 +88,36 @@ endif
 " http://www.linuxpowertop.org/known.php
 let &guicursor = &guicursor . ",a:blinkon0"
 
+" ==============================================================================
+" " Vim-Gitgutter Configuration: Lazygit-Style Added Lines Only (Dark Red
+" Theme)
+" "
+" ==============================================================================
+"
+" 1. Enable background line highlighting for changes
+let g:gitgutter_highlight_lines = 1
+"
+" 2. Suppress Gutter Signs for Modified and Deleted Lines
+" (Links them to 'Normal' so they blend invisibly into your default background)
+highlight link GitGutterChange       Normal
+highlight link GitGutterDelete       Normal
+highlight link GitGutterChangeDelete Normal
+"
+" 3. Suppress Line Background Highlighting for Modified and Deleted Lines
+" (Prevents bright blue/green block backgrounds on modified blocks)
+highlight link GitGutterChangeLine       Normal
+highlight link GitGutterDeleteLine       Normal
+highlight link GitGutterChangeDeleteLine Normal
+"
+" 4. Style New Additions in Dark Red
+" - GitGutterAdd controls the text/foreground color of the '+' sign in the gutter.
+" - GitGutterAddLine controls the full-line background highlight of the added code.
+" - ctermfg / ctermbg: Used for standard 256-color terminal setups.
+" - guifg / guibg: Used for GUI Vim or terminals running set termguicolors (Hex values).
+highlight GitGutterAdd     ctermfg=88  guifg=#870000
+"highlight GitGutterAddLine ctermbg=237 guibg=#5f0000
+highlight GitGutterAddLine ctermbg=236 guibg=#5f0000
+
+" 5. Optimization: Increase the update interval (Default is 4000ms)
+" This makes GitGutter refresh its highlighting 250ms after you stop typing.
+set updatetime=250

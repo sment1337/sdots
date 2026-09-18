@@ -299,3 +299,6 @@ export DISPLAY=:0
 if pgrep -q Xquartz; then
     xauth add $(xauth list 2>/dev/null | head -1) 2>/dev/null
 fi
+
+export EDITOR='vim'
+export VIMINIT='source ~/.vim/.vimrc'
