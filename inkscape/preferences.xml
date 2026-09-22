@@ -620,7 +620,7 @@
     <group
        id="open"
        enable_preview="1"
-       path="/home/USERNAME/resilio/folders/DripBox/workshop projects/Laser/Images/family//REDACTED" />
+       path="" />
     <group
        id="import"
        enable_preview="1"
@@ -971,7 +971,7 @@
      community.jtechphotonics.com.machine_origin="bottom-left"
      community.jtechphotonics.com.travel_speed="15000"
      community.jtechphotonics.com.cutting_speed="100"
-     community.jtechphotonics.com.directory="/home/USERNAME/resilio/folders/DripBox/workshop projects/Laser/Images/family//REDACTED"
+     community.jtechphotonics.com.directory=""
      community.jtechphotonics.com.filename_suffix="0"
      community.jtechphotonics.com.filename="frame_vector.gcode"
      community.jtechphotonics.com.tabs="important_settings"

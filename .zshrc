@@ -293,6 +293,9 @@ export PATH="$PATH:/Users/USERNAME/.lmstudio/bin"
 
 export PATH="/Users/USERNAME/.local/bin:$PATH"
 
+# Local machine-specific overrides (not tracked by git)
+[ -f "$HOME/.local.zshrc" ] && source "$HOME/.local.zshrc"
+
 # Set DISPLAY for XQuartz
 export DISPLAY=:0
 # Only sync xauth if XQuartz is running (avoids ~5s startup hang)

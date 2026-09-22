@@ -2,7 +2,7 @@
 
 echo 'Type title: '
 read title
-path='/Users/USERNAME/Library/CloudStorage/GoogleDrive-20616301+sment1337@users.noreply.github.com/My Drive/notes/'
+path="$NOTES_DIR/"
 vimCmd="vim -u ~/.vim/.vimrc"
 
 echo $var1

@@ -6,8 +6,8 @@ read var1
 
 echo $var1
 
-#var2=$(grep -rnwI '/Users/USERNAME/Library/CloudStorage/GoogleDrive-20616301+sment1337@users.noreply.github.com/My Drive/notes' -e $var1 | fzf) #| cut -d":" -f1,2 
-var2=$(egrep --recursive --with-filename --line-number --binary-files=without-match "$var1" '/Users/USERNAME/Library/CloudStorage/GoogleDrive-20616301+sment1337@users.noreply.github.com/My Drive/notes' | fzf) #| cut -d":" -f1,2 
+#var2=$(grep -rnwI "$NOTES_DIR" -e $var1 | fzf) #| cut -d":" -f1,2 
+var2=$(egrep --recursive --with-filename --line-number --binary-files=without-match "$var1" "$NOTES_DIR" | fzf) #| cut -d":" -f1,2 
 
 
 #echo var2 is $var2.
