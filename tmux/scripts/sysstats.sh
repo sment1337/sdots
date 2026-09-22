@@ -91,10 +91,13 @@ case "${1:-}" in
       exit 0
     fi
     echo $$ > "$pidfile"
-    cpu="-"; gpu="-"; ram="-"; bat="-"
+    cpu="-"; gpu="-"; ram="-"; bat="-"; n=0
     while :; do
-      cpu=$("$0" cpu)                    # every tick (5s)
-      gpu=$("$0" gpu)                     # top/powermetrics ~1s, fine at 5s
+      n=$(( n + 1 ))
+      # top -l1 is the only expensive sample (~0.4 CPU-s); run it every
+      # other tick so the cpu graph updates at 10s resolution
+      if (( n % 2 == 0 )); then cpu=$("$0" cpu); fi
+      gpu=$("$0" gpu)                     # cheap unless passwordless sudo exists
       ram=$("$0" ram)
       bat=$("$0" bat)
       # status-right goes through strftime(3), so literal % must be %%
