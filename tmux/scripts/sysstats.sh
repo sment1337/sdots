@@ -11,7 +11,8 @@ BARS=(▁ ▂ ▃ ▄ ▅ ▆ ▇ █)
 spark() { # spark <histfile> <value>
   local file="$1" val="$2" hist idx out
   mkdir -p "$HIST_DIR"
-  { echo "$val"; tail -n 8 "$file" 2>/dev/null | head -n 7; } > "$file.tmp" && mv "$file.tmp" "$file"
+  # keep newest + 6 previous = 7 lines total (7 bars)
+  { echo "$val"; tail -n 7 "$file" 2>/dev/null | head -n 6; } > "$file.tmp" && mv "$file.tmp" "$file"
   hist=()
   while read -r v; do hist+=("$v"); done < "$file"
   # oldest -> newest, so the graph grows left-to-right toward the value
