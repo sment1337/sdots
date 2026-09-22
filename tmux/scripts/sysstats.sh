@@ -22,7 +22,9 @@ spark() { # spark <histfile> <value>
     (( idx > 7 )) && idx=7
     out+="${BARS[$idx]}"
   done
-  echo "$out $val%"
+  # value in a fixed 5-wide slot ("100%" max) so 1->2->3 digits never
+  # shift the bars: total field is always 7 bars + 5 = 12 cells
+  printf '%s %5s' "$out" "${val}%"
 }
 
 case "${1:-}" in
@@ -45,7 +47,7 @@ case "${1:-}" in
     if [[ -n "$val" ]]; then
       spark "$HIST_DIR/gpu.hist" "$val"
     else
-      echo "n/a"
+      printf '%-12s' "n/a"
     fi
     ;;
   ram)
@@ -97,6 +99,11 @@ case "${1:-}" in
     echo $$ > "$pidfile"
     cpu="-"; gpu="-"; ram="-"; bat="-"; n=0
     while :; do
+      # hidden mode (click the bar to toggle): stop all sampling
+      if [[ "$(tmux show -gqv @status_hidden 2>/dev/null)" == "1" ]]; then
+        sleep 5
+        continue
+      fi
       n=$(( n + 1 ))
       # top -l1 is the only expensive sample (~0.4 CPU-s); run it every
       # other tick so the cpu graph updates at 10s resolution
@@ -106,10 +113,9 @@ case "${1:-}" in
       bat=$("$0" bat)
       # status-right goes through strftime(3), so literal % must be %%
       local_cpu=${cpu//%/%%}; local_gpu=${gpu//%/%%}; local_ram=${ram//%/%%}; local_bat=${bat//%/%%}
-      # pad each value to a fixed width so the centred bar doesn't shift
-      # when numbers grow/shrink (bat is already padded by its subcommand)
-      local_cpu=$(printf '%12s' "$local_cpu"); local_gpu=$(printf '%12s' "$local_gpu")
-      local_ram=$(printf '%12s' "$local_ram")
+      # fixed-width fields (12 cells each for cpu/gpu incl. their value
+      # slots; ram left-aligned to 11) so digit changes never shift the bar
+      local_ram=$(printf '%-11s' "$local_ram")
       tmux set -g status-right \
         "#[fg=colour191,bold]%I:%M %p  #[fg=colour240]cpu #[fg=colour39]${local_cpu}#[fg=colour245] | #[fg=colour240]gpu #[fg=colour208]${local_gpu}#[fg=colour245] | #[fg=colour240]ram #[fg=colour117]${local_ram}#[fg=colour245] | #[fg=colour114]${local_bat}" 2>/dev/null
       sleep 5
