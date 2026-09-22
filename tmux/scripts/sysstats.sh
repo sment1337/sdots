@@ -14,8 +14,10 @@ spark() { # spark <histfile> <value>
   { echo "$val"; tail -n 8 "$file" 2>/dev/null | head -n 7; } > "$file.tmp" && mv "$file.tmp" "$file"
   hist=()
   while read -r v; do hist+=("$v"); done < "$file"
+  # oldest -> newest, so the graph grows left-to-right toward the value
   out=""
-  for v in "${hist[@]}"; do
+  for (( i=${#hist[@]}-1; i>=0; i-- )); do
+    v="${hist[i]}"
     idx=$(( (v * 8 + 50) / 100 ))
     (( idx > 7 )) && idx=7
     out+="${BARS[$idx]}"
