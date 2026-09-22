@@ -22,9 +22,10 @@ spark() { # spark <histfile> <value>
     (( idx > 7 )) && idx=7
     out+="${BARS[$idx]}"
   done
-  # value in a fixed 5-wide slot ("100%" max) so 1->2->3 digits never
-  # shift the bars: total field is always 7 bars + 5 = 12 cells
-  printf '%s %5s' "$out" "${val}%"
+  # value left-aligned in a fixed 4-wide slot ("100%" max) right after the
+  # graph: snug for small values, and 1->2->3 digits never shift the bars
+  # (total field is always 7 bars + 1 + 4 = 12 cells)
+  printf '%s %-4s' "$out" "${val}%"
 }
 
 case "${1:-}" in
