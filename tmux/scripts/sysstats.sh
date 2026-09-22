@@ -31,11 +31,13 @@ case "${1:-}" in
     spark "$HIST_DIR/cpu.hist" "$val"
     ;;
   gpu)
-    # macOS exposes live GPU% only via `sudo powermetrics`. Use it if we can
-    # run sudo without a password; otherwise show n/a.
-    val=""
-    if sudo -n true 2>/dev/null; then
-      val=$(timeout 8 sudo -n powermetrics --samplers gpu_util -i 1000 -n 1 2>/dev/null \
+    # Preferred: ioreg PerformanceStatistics on Apple Silicon (no sudo,
+    # ~20ms). "Device Utilization %" is the aggregate GPU busy percentage.
+    val=$(ioreg -r -d 2 -c AGXAccelerator -l -w 0 2>/dev/null \
+          | grep -oE '"Device Utilization %"=[0-9]+' | head -1 | cut -d= -f2)
+    # Fallback: sudo powermetrics, if passwordless sudo exists
+    if [[ -z "$val" ]] && sudo -n true 2>/dev/null; then
+      val=$(sudo -n powermetrics --samplers gpu_util -i 1000 -n 1 2>/dev/null \
             | grep -oE 'GPU core utilization: [0-9.]+ %' | head -1 | awk -F'[:%]' '{printf "%d", $2}')
     fi
     if [[ -n "$val" ]]; then
