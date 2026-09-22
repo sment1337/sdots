@@ -29,6 +29,21 @@ spark() { # spark <histfile> <value>
   printf '%s %-4s' "$out" "${val}%"
 }
 
+sparkview() { # sparkview <histfile> — render current history, no new sample
+  local file="$1" hist out v
+  [[ -s "$file" ]] || { printf '%-12s' '-'; return; }
+  hist=()
+  while read -r v; do hist+=("$v"); done < "$file"
+  out=""
+  for (( i=${#hist[@]}-1; i>=0; i-- )); do
+    v="${hist[i]}"
+    idx=$(( (v * 8 + 50) / 100 ))
+    (( idx > 7 )) && idx=7
+    out+="${BARS[$idx]}"
+  done
+  printf '%s %-4s' "$out" "${hist[0]}%"
+}
+
 case "${1:-}" in
   cpu)
     # top -l1 samples for ~1s; CPU usage = 100 - idle (aggregate 0-100%)
@@ -89,9 +104,34 @@ case "${1:-}" in
     pad=$(( 15 - cells )); (( pad < 0 )) && pad=0
     printf '%s%*s' "$out" "$pad" ''
     ;;
+  tick)
+    # One sampling+render pass (daemon runs this every 5s; the click-to-hide
+    # toggle runs it once for an instant update).
+    # hidden mode: right side shrinks to just the clock, no sampling at all
+    if [[ "$(tmux show -gqv @status_hidden 2>/dev/null)" == "1" ]]; then
+      tmux set -g status-right '#[fg=colour191,bold]%I:%M %p' 2>/dev/null
+      exit 0
+    fi
+    # tick counter in a file (tick may run as a fresh process each time);
+    # top -l1 is the expensive sample (~0.4 CPU-s), so it runs every other
+    # tick — the cpu graph then updates at 10s resolution
+    nfile="$HIST_DIR/n"
+    n=$(( $(cat "$nfile" 2>/dev/null || echo 0) + 1 )); echo "$n" > "$nfile"
+    if (( n % 2 == 0 )); then cpu=$("$0" cpu); else cpu=$(sparkview "$HIST_DIR/cpu.hist"); fi
+    gpu=$("$0" gpu)                     # ioreg, ~20ms
+    ram=$("$0" ram)
+    bat=$("$0" bat)
+    # status-right goes through strftime(3), so literal % must be %%
+    local_cpu=${cpu//%/%%}; local_gpu=${gpu//%/%%}; local_ram=${ram//%/%%}; local_bat=${bat//%/%%}
+    # fixed-width fields (12 cells each for cpu/gpu incl. their value
+    # slots; ram left-aligned to 11) so digit changes never shift the bar
+    local_ram=$(printf '%-11s' "$local_ram")
+    tmux set -g status-right \
+      "#[fg=colour191,bold]%I:%M %p  #[fg=colour240]cpu #[fg=colour39]${local_cpu}#[fg=colour245] | #[fg=colour240]gpu #[fg=colour208]${local_gpu}#[fg=colour245] | #[fg=colour240]ram #[fg=colour117]${local_ram}#[fg=colour245] | #[fg=colour114]${local_bat}" 2>/dev/null
+    exit 0
+    ;;
   daemon)
     # Started by tmux.conf via: run-shell -b '... sysstats.sh daemon'
-    # One loop per 5s; cpu every tick, gpu/ram every 2 ticks, bat every 6.
     mkdir -p "$HIST_DIR"
     # don't start a second daemon on config reload
     pidfile="$HIST_DIR/daemon.pid"
@@ -99,32 +139,10 @@ case "${1:-}" in
       exit 0
     fi
     echo $$ > "$pidfile"
-    cpu="-"; gpu="-"; ram="-"; bat="-"; n=0
-    while :; do
-      # hidden mode (click the bar to toggle): stop all sampling
-      if [[ "$(tmux show -gqv @status_hidden 2>/dev/null)" == "1" ]]; then
-        sleep 5
-        continue
-      fi
-      n=$(( n + 1 ))
-      # top -l1 is the only expensive sample (~0.4 CPU-s); run it every
-      # other tick so the cpu graph updates at 10s resolution
-      if (( n % 2 == 0 )); then cpu=$("$0" cpu); fi
-      gpu=$("$0" gpu)                     # cheap unless passwordless sudo exists
-      ram=$("$0" ram)
-      bat=$("$0" bat)
-      # status-right goes through strftime(3), so literal % must be %%
-      local_cpu=${cpu//%/%%}; local_gpu=${gpu//%/%%}; local_ram=${ram//%/%%}; local_bat=${bat//%/%%}
-      # fixed-width fields (12 cells each for cpu/gpu incl. their value
-      # slots; ram left-aligned to 11) so digit changes never shift the bar
-      local_ram=$(printf '%-11s' "$local_ram")
-      tmux set -g status-right \
-        "#[fg=colour191,bold]%I:%M %p  #[fg=colour240]cpu #[fg=colour39]${local_cpu}#[fg=colour245] | #[fg=colour240]gpu #[fg=colour208]${local_gpu}#[fg=colour245] | #[fg=colour240]ram #[fg=colour117]${local_ram}#[fg=colour245] | #[fg=colour114]${local_bat}" 2>/dev/null
-      sleep 5
-    done
+    while :; do "$0" tick; sleep 5; done
     ;;
   *)
-    echo "usage: $0 cpu|gpu|ram|bat|daemon" >&2
+    echo "usage: $0 cpu|gpu|ram|bat|tick|daemon" >&2
     exit 1
     ;;
 esac
