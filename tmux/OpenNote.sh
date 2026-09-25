@@ -1,5 +1,16 @@
 #!/usr/bin/zsh
 
+# Notes root. tmux runs this through `split-window "sh ..."`, i.e. a
+# non-interactive shell that never sources .zshrc, so load the local overrides
+# directly and fall back to the default vault if they are absent.
+[ -f "$HOME/.local.zshrc" ] && source "$HOME/.local.zshrc"
+NOTES_DIR="${NOTES_DIR:-$HOME/DripBox/QownNotes}"
+
+if [[ ! -d "$NOTES_DIR" ]]; then
+  echo "notes directory not found: $NOTES_DIR" >&2
+  exit 1
+fi
+
 echo 'type search keyword or regexp (/!\ Note: use -e ASDASD to do or search):'
 
 read var1
@@ -14,7 +25,7 @@ if ! var2=$(egrep -rnI \
   --exclude-dir=.venv \
   --exclude-dir=CIEenv \
   --exclude-dir=.ipynb_checkpoints \
-  "$var1" ~/DripBox/QownNotes | fzf --preview-window 'right,40%' --bind "ctrl-p:preview(sh $HOME/sdots/tmux/preview.sh {}),ctrl-z:change-preview-window(hidden)") 
+  "$var1" "$NOTES_DIR" | fzf --preview-window 'right,40%' --bind "ctrl-p:preview(sh $HOME/sdots/tmux/preview.sh {}),ctrl-z:change-preview-window(hidden)") 
 then 
     echo "Search cancelled"
     return 0 2>/dev/null || exit 0
