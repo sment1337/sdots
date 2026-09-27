@@ -1,0 +1,9 @@
+# WSL: headless — no GUI stacks (i3/polybar/rofi/nitrogen/sddm), no conky.
+git
+zsh
+tmux
+btop
+autojump
+vim
+zf
+lazygit

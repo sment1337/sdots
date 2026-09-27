@@ -1,0 +1,2 @@
+# AUR-only — installed with `yay -S --needed --noconfirm` when yay exists.
+sddm-theme-sugar-candy-git

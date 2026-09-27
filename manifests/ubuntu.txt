@@ -1,0 +1,10 @@
+# Ubuntu / Debian-family (apt).
+git
+zsh
+tmux
+btop
+autojump
+vim
+zf
+lazygit
+conky

@@ -1,0 +1,10 @@
+# Pop!_OS 22.04 = Ubuntu-based: apt family, same as ubuntu.txt but WITHOUT
+# conky (conky is arch/ubuntu only per your decision).
+git
+zsh
+tmux
+btop
+autojump
+vim
+zf
+lazygit

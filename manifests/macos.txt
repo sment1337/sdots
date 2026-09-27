@@ -1,0 +1,40 @@
+# Generated 2026-09-22 from `brew leaves` on this Mac.
+# Casks installed: audacity blackhole-2ch inkscape libreoffice obsidian quarto xquartz
+# Regenerate: brew leaves | grep -v "^#" > manifests/macos.txt
+age
+autojump
+automake
+bat
+btop
+cmake
+djvulibre
+fd
+ffmpeg
+fzf
+git-filter-repo
+glow
+hf
+homebrew-zathura/zathura/zathura-pdf-mupdf
+jpeg
+lazygit
+lazyrsync
+llama.cpp
+meson
+midnight-commander
+mosh
+ncdu
+ngspice
+node
+node@22
+openvpn
+pandoc
+pdfgrep
+pkgconf
+rsync
+sphinx-doc
+tcl-tk
+tcl-tk@8
+tea
+tmux
+typst
+uv

@@ -1,0 +1,24 @@
+# Arch (pacman). AUR-only names live in arch-aur.txt (installed via yay).
+# conky intentionally appears here and in ubuntu.txt only (per your decision).
+terminator
+i3-wm
+i3status
+xorg-xrandr
+picom
+polybar
+upower
+python-pip
+base-devel
+wget
+sddm
+nitrogen
+rofi
+git
+zsh
+tmux
+btop
+autojump
+vim
+fzf
+lazygit
+conky
