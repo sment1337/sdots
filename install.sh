@@ -52,17 +52,23 @@ pkg_family() {  # arch | apt | brew | none
 manifest_for() { case "$1" in arch) echo arch;; popos) echo popOS;; ubuntu|wsl) echo "$1";; macos) echo macos;; esac; }
 
 install_from_manifest() { # $1 = os name, $2 = manifest basename
-  local os="$1" base="$2" file="$MANIFESTS/$2.txt" pkg missing=()
+  local os="$1" base="$2" file="$MANIFESTS/$2.txt" pkg missing=() family
+  file="$MANIFESTS/$2.txt"
+  family="$(pkg_family "$os")"
   [[ -r "$file" ]] || { warn "no manifest $file — skipping package install"; return 0; }
   while read -r pkg; do
     case "$pkg" in ''|\#*) continue ;; esac
-    command -v "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
+    case "$pkg" in */*) warn "$pkg is a tap package — install manually"; continue ;; esac
+    case "$family" in
+      brew) brew list --formula --versions "$pkg" 2>/dev/null | grep -q . || missing+=("$pkg") ;;
+      *)    command -v "$pkg" >/dev/null 2>&1 || missing+=("$pkg") ;;
+    esac
   done < "$file"
   if [[ ${#missing[@]} -eq 0 ]]; then
     log "$2: everything already installed"
     return 0
   fi
-  case "$(pkg_family "$os")" in
+  case "$family" in
     arch)
       if command -v yay >/dev/null 2>&1; then
         log "yay: installing ${missing[*]}"
@@ -97,8 +103,9 @@ install_from_manifest() { # $1 = os name, $2 = manifest basename
 link() { # $1 = repo-relative source, $2 = destination under $HOME
   local src="$REPO/$1" dst="$HOME/$2"
   [[ -e "$src" ]] || { warn "missing source $src — skipping"; return 0; }
+  mkdir -p "$(dirname "$dst")"
   if [[ -e "$dst" || -L "$dst" ]]; then
-    if [[ "$(readlink -f "$dst" 2>/dev/null || true)" == "$(readlink -f "$src" 2>/dev/null || true)" ]]; then
+    if [[ "$(readlink "$dst" 2>/dev/null || true)" == "$src" ]]; then
       log "$2 already linked -> $1"
     else
       warn "$2 already exists and is not our symlink — leaving it alone"
