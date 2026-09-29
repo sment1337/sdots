@@ -272,9 +272,8 @@ export RANGER_LOAD_DEFAULT_RC="FALSE"
 #bindkey -v
 
 # Set up fzf key bindings and fuzzy completion
-if command -v fzf >/dev/null 2>&1; then
-  source <(zfz --zsh)
-fi
+fb="$(command -v zfz 2>/dev/null || command -v fzf 2>/dev/null)"
+[ -n "$fb" ] && source <("$fb" --zsh)
 
 # To have preview in fzf
 _fzf_comprun() {
