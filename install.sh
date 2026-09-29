@@ -160,7 +160,7 @@ main() {
         warn "$tpm exists but is not our clone — leaving it alone"
       else
         log "cloning tpm -> $tpm"
-        git clone --depth 1 https://github.com/tpm-plugins/tpm "$tpm" \
+        git clone --depth 1 https://github.com/tmux-plugins/tpm "$tpm" \
           || fail "tpm clone failed — tmux plugins won't load"
       fi
     else
