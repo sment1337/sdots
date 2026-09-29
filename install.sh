@@ -153,24 +153,28 @@ main() {
   link "conky"               ".config/conky"
 
   # 3. Plugin managers.
-  if command -v tmux >/dev/null 2>&1; then
-    tpm="$HOME/.tmux/plugins/tpm"
-    if [[ ! -x "$tpm/tpm" ]]; then
-      if [[ -e "$tpm" ]]; then
-        warn "$tpm exists but is not our clone — leaving it alone"
+  #  3a. tmux plugins: clone every `set -g @plugin 'user/repo'` from
+  #      .tmux.conf into ~/.tmux/plugins/<repo>. (tpm's own install_plugins
+  #      can't run here: it reads TMUX_PLUGIN_MANAGER_PATH via
+  #      `tmux start-server`, which never sources .tmux.conf, so the
+  #      variable is undefined and it aborts.)
+  if command -v git >/dev/null 2>&1 && [[ -r "$REPO/tmux/.tmux.conf" ]]; then
+    while read -r plug; do
+      [[ -z "$plug" || "$plug" == \#* ]] && continue
+      name="${plug##*/}"
+      dest="$HOME/.tmux/plugins/$name"
+      if [[ -d "$dest/.git" ]]; then
+        log "tmux plugin $name already cloned"
       else
-        log "cloning tpm -> $tpm"
-        git clone --depth 1 https://github.com/tmux-plugins/tpm "$tpm" \
-          || fail "tpm clone failed — tmux plugins won't load"
+        log "cloning $plug -> $dest"
+        mkdir -p "$(dirname "$dest")"
+        git clone --depth 1 --single-branch "https://github.com/$plug" "$dest" \
+          || fail "clone failed for $plug — run prefix+I inside tmux to install it"
       fi
-    else
-      log "tpm already cloned"
-    fi
-    if [[ -x "$tpm/bin/install_plugins" ]]; then
-      log "installing tmux plugins (tpm)"
-      "$tpm/bin/install_plugins" >/dev/null \
-        || warn "install_plugins failed — start tmux and run prefix+I manually"
-    fi
+    done < <(grep -E "^[[:space:]]*set(-option)?[[:space:]]+-g[[:space:]]+@plugin" "$REPO/tmux/.tmux.conf" \
+             | sed -E "s/.*@plugin[[:space:]]+'([^']+)'.*/\1/" | sort -u)
+  else
+    warn "git or tmux config missing — install tmux plugins manually"
   fi
 
   if command -v vim >/dev/null 2>&1; then
