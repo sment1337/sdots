@@ -56,12 +56,15 @@ install_from_manifest() { # $1 = os name, $2 = manifest basename
   file="$MANIFESTS/$2.txt"
   family="$(pkg_family "$os")"
   [[ -r "$file" ]] || { warn "no manifest $file — skipping package install"; return 0; }
-  while read -r pkg; do
-    case "$pkg" in ''|\#*) continue ;; esac
+  local line pkg cmd
+  while read -r line; do
+    case "$line" in ''|\#*) continue ;; esac
+    if [[ "$line" == *:* ]]; then pkg="${line%%:*}"; cmd="${line##*:}"
+    else pkg="$line"; cmd="$line"; fi
     case "$pkg" in */*) warn "$pkg is a tap package — install manually"; continue ;; esac
     case "$family" in
       brew) brew list --formula --versions "$pkg" 2>/dev/null | grep -q . || missing+=("$pkg") ;;
-      *)    command -v "$pkg" >/dev/null 2>&1 || missing+=("$pkg") ;;
+      *)    command -v "$cmd" >/dev/null 2>&1 || missing+=("$pkg") ;;
     esac
   done < "$file"
   if [[ ${#missing[@]} -eq 0 ]]; then

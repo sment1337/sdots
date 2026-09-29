@@ -5,6 +5,6 @@ tmux
 btop
 autojump
 vim
-zf
+fzf
 lazygit
-conky
+conky-std:conky

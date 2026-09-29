@@ -6,5 +6,5 @@ tmux
 btop
 autojump
 vim
-zf
+fzf
 lazygit
