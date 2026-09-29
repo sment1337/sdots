@@ -263,43 +263,44 @@ if [ -f /etc/zsh_command_not_found ]; then
     . /etc/zsh_command_not_found
 fi
 
-[ -f /opt/homebrew/etc/profile.d/autojump.sh ] && . /opt/homebrew/etc/profile.d/autojump.sh
+for aj in /opt/homebrew/etc/profile.d/autojump.sh /usr/share/autojump/autojump.zsh; do
+  [ -f "$aj" ] && { . "$aj"; break; }
+done; unset aj
 
 export RANGER_LOAD_DEFAULT_RC="FALSE"
 
 #bindkey -v
 
 # Set up fzf key bindings and fuzzy completion
-source <(/opt/homebrew/bin/fzf --zsh)
-#/opt/homebrew/Cellar/fzf/0.62.0/shell/completion.zsh
-#/opt/homebrew/Cellar/fzf/0.62.0/shell/key-bindings.zsh
+if command -v fzf >/dev/null 2>&1; then
+  source <(zfz --zsh)
+fi
 
 # To have preview in fzf
 _fzf_comprun() {
   local command=$1
   shift
 
+  local batbin
+  batbin="$(command -v bat || command -v batcat)"
   case "$command" in
     cd)           fzf "$@" --preview 'tree {} -C -L 1 -a' ;;
-    *)            fzf "$@" --preview="batcat {}" --bind pgdn:preview-page-down,pgup:preview-page-up --border=rounded ;;
+    *)            fzf "$@" --preview="$batbin {}" --bind pgdn:preview-page-down,pgup:preview-page-up --border=rounded ;;
   esac
 }
-export PATH=/opt/homebrew/bin:$PATH
-export PATH=/usr/local/ffmpeg/bin/:$PATH
+for p in /opt/homebrew/bin /usr/local/ffmpeg/bin; do
+  case ":$PATH:" in *":$p:"*) ;; *) [ -d "$p" ] && PATH="$p:$PATH" ;; esac
+done; unset p
+export PATH="$PATH:$HOME/.lmstudio/bin:$HOME/.local/bin"
 
-# Added by LM Studio CLI (lms)
-export PATH="$PATH:$HOME/.lmstudio/bin"
-# End of LM Studio CLI section
 
-export PATH="$HOME/.local/bin:$PATH"
 
 # Local machine-specific overrides (not tracked by git)
 [ -f "$HOME/.local.zshrc" ] && source "$HOME/.local.zshrc"
 
-# Set DISPLAY for XQuartz
-export DISPLAY=:0
-# Only sync xauth if XQuartz is running (avoids ~5s startup hang)
-if pgrep -q Xquartz; then
+# XQuartz xauth sync (macOS only; DISPLAY itself belongs in ~/.local.zshrc
+# if a machine needs it — never hardcode DISPLAY in a tracked file)
+if command -v pgrep >/dev/null 2>&1 && pgrep -x Xquartz >/dev/null 2>&1; then
     xauth add $(xauth list 2>/dev/null | head -1) 2>/dev/null
 fi
 
