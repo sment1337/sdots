@@ -152,7 +152,34 @@ main() {
   # popOS/WSL/macOS still links them if present — harmless either way:
   link "conky"               ".config/conky"
 
-  # 3. systemd user units — Linux only, and only with a usable systemctl --user.
+  # 3. Plugin managers.
+  if command -v tmux >/dev/null 2>&1; then
+    tpm="$HOME/.tmux/plugins/tpm"
+    if [[ ! -x "$tpm/tpm" ]]; then
+      if [[ -e "$tpm" ]]; then
+        warn "$tpm exists but is not our clone — leaving it alone"
+      else
+        log "cloning tpm -> $tpm"
+        git clone --depth 1 https://github.com/tpm-plugins/tpm "$tpm" \
+          || fail "tpm clone failed — tmux plugins won't load"
+      fi
+    else
+      log "tpm already cloned"
+    fi
+    if [[ -x "$tpm/bin/install_plugins" ]]; then
+      log "installing tmux plugins (tpm)"
+      "$tpm/bin/install_plugins" >/dev/null \
+        || warn "install_plugins failed — start tmux and run prefix+I manually"
+    fi
+  fi
+
+  if command -v vim >/dev/null 2>&1; then
+    log "installing vim plugins (vim-plug)"
+    vim -es -u "$REPO/.vim/.vimrc" +PlugInstall +qall >/dev/null \
+      || warn "PlugInstall failed — open vim and run :PlugInstall manually"
+  fi
+
+  # 4. systemd user units — Linux only, and only with a usable systemctl --user.
   if [[ "$os" == wsl ]]; then
     log "WSL detected — skipping systemd user units (no systemd in WSL)"
   elif systemctl --user -q is-system-running >/dev/null 2>&1 || command -v systemctl >/dev/null 2>&1; then
@@ -162,7 +189,7 @@ main() {
     log "no systemd here — skipping user units"
   fi
 
-  # 4. Reminders.
+  # 5. Reminders.
   if command -v zsh >/dev/null 2>&1 && [[ "${SHELL:-}" != *zsh* ]]; then
     log "reminder: set login shell: chsh -s $(command -v zsh)"
   fi
