@@ -1,3 +1,6 @@
 /.vim/plugged
+# native-pack plugins are cloned by install.sh (step 3c); a clone can never be
+# committed as plain files anyway — an embedded repo only stores a gitlink.
+/.vim/pack/
 /.vim/.netrwhist
 .local.zshrc

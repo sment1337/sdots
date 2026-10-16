@@ -183,6 +183,29 @@ main() {
       || warn "PlugInstall failed — open vim and run :PlugInstall manually"
   fi
 
+  #  3c. native-pack vim plugins: unlike vim-plug these are NOT fetched by
+  #      :PlugInstall, they live under .vim/pack/<ns>/start/<repo> where vim
+  #      loads them automatically. They cannot be committed the normal way,
+  #      and a plain "git add" of a clone there stores only an embed-gitlink
+  #      (mode 160000) that materialises as an EMPTY dir in fresh clones —
+  #      which is exactly how vim-gitgutter vanished from new machines. So we
+  #      keep them out of git entirely (.gitignore) and clone here; an
+  #      existing checkout (e.g. the original Mac clone) is left alone.
+  for plug in "airblade/vim-gitgutter"; do
+    name="${plug##*/}"
+    dest="$REPO/.vim/pack/${plug%/*}/start/$name"
+    if [[ -d "$dest/.git" ]]; then
+      log "vim pack plugin $name already cloned"
+    elif [[ -e "$dest" && -n "$(ls -A "$dest" 2>/dev/null)" ]]; then
+      warn "$dest exists but is not a git clone — inspect manually (rm it and re-run to fetch)"
+    else
+      log "cloning $plug -> ${dest#"$REPO/"}"
+      mkdir -p "$(dirname "$dest")"
+      git clone --depth 1 --single-branch "https://github.com/$plug" "$dest" \
+        || fail "clone failed for $plug — run: git clone https://github.com/$plug '$dest'"
+    fi
+  done
+
   # 4. systemd user units — Linux only, and only with a usable systemctl --user.
   if [[ "$os" == wsl ]]; then
     log "WSL detected — skipping systemd user units (no systemd in WSL)"
@@ -191,6 +214,27 @@ main() {
     systemctl --user daemon-reload 2>/dev/null || warn "units linked; run: systemctl --user daemon-reload && enable --user <units>"
   else
     log "no systemd here — skipping user units"
+  fi
+
+  # 4b. pacman hook — Arch only. tmux/scripts/sysstats.sh reads Intel iGPU
+  #     utilisation via intel_gpu_top, which needs CAP_PERFMON as a *file*
+  #     capability; upgrades replace the binary and drop it, so a libalpm hook
+  #     re-applies it. Needs root to place (/etc is not $HOME-linkable), hence
+  #     `install` with sudo -n rather than the link() helper.
+  if [[ "$os" == arch ]]; then
+    hook_src="$REPO/pacman/hooks/intel-gpu-top-perfmon.hook"
+    hook_dst="/etc/pacman.d/hooks/intel-gpu-top-perfmon.hook"
+    if [[ ! -r "$hook_src" ]]; then
+      warn "pacman hook source missing — skipping"
+    elif [[ -f "$hook_dst" ]] && cmp -s "$hook_src" "$hook_dst"; then
+      log "pacman hook already installed ($hook_dst)"
+    elif sudo -n true 2>/dev/null; then
+      sudo -n install -D -m 644 "$hook_src" "$hook_dst" \
+        && log "installed pacman hook -> $hook_dst" \
+        || fail "could not install pacman hook to $hook_dst"
+    else
+      warn "no passwordless sudo; install the hook manually: sudo install -Dm644 '$hook_src' '$hook_dst'"
+    fi
   fi
 
   # 5. Reminders.

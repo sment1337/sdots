@@ -1,0 +1,31 @@
+# intel-gpu-top-perfmon.hook — keep tmux GPU stats working across upgrades.
+#
+# tmux/scripts/sysstats.sh samples Intel iGPU utilisation through
+# intel_gpu_top, which reads the i915 PMU and therefore needs CAP_PERFMON
+# (kernel.perf_event_paranoid=2 blocks unprivileged perf_event_open). The
+# grant is a file capability:
+#
+#     sudo setcap cap_perfmon+ep /usr/bin/intel_gpu_top
+#
+# File capabilities do NOT survive a package upgrade (new file, no caps), so
+# re-apply them whenever intel-gpu-tools is installed or upgraded. Without
+# this hook the tmux bar silently degrades to "n/a:igfx" after updates unless
+# passwordless sudo is available (the script's fallback path).
+#
+# Remove operations are deliberately NOT triggered: the binary is gone by
+# then and setcap would only fail. See alpm-hooks(5) for the file format.
+# Installed by install.sh to /etc/pacman.d/hooks/ (Arch only).
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = intel-gpu-tools
+
+[Action]
+Description = Re-grant CAP_PERFMON to intel_gpu_top (tmux gpu stats)
+When = PostTransaction
+Exec = /usr/bin/setcap cap_perfmon+ep /usr/bin/intel_gpu_top
+Depends = libcap
+# (No OnError option exists in alpm-hooks(5): a failing Exec always blocks the
+#  transaction. Hence Remove is not triggered and Depends pins the package that
+#  provides /usr/bin/setcap — libcap, not attr.)
