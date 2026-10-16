@@ -8,3 +8,6 @@ autojump
 vim
 fzf
 lazygit
+# tmux status bar (tmux/scripts/sysstats.sh): see ubuntu.txt note.
+intel-gpu-tools:intel_gpu_top
+upower

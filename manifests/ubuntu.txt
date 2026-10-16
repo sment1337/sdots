@@ -8,3 +8,8 @@ vim
 fzf
 lazygit
 conky-std:conky
+# tmux status bar (tmux/scripts/sysstats.sh): Intel iGPU utilisation + battery
+# time-left. Package installs to /usr/sbin/intel_gpu_top here; the script looks
+# for it there explicitly.
+intel-gpu-tools:intel_gpu_top
+upower

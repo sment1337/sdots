@@ -22,11 +22,12 @@ WSL → apt, headless subset) and installs only what's missing according to
 | Source in repo | Linked to |
 |---|---|
 | `.zshrc` | `~/.zshrc` |
-| `.vim` | `~/.vim` |
+| `.vim` | `~/.vim` (vim-plug plugins fetched by install.sh; native-pack ones like vim-gitgutter cloned at step 3c — not tracked in git) |
 | `tmux/` | `~/.tmux` + `~/.tmux.conf` (scripts reference `$HOME/sdots/...`) |
 | `i3 polybar rofi nitrogen htop mc picom terminator ranger inkscape gtk-2.0 conky` | `~/.config/<name>` |
 | `dconf/user` | `~/.config/dconf/user` (dconf doesn't follow symlinks — verify on first run) |
 | `systemd/user` | `~/.config/systemd/user` (Linux only, skipped on WSL) |
+| `pacman/hooks` | copied to `/etc/pacman.d/hooks/` (Arch only; keeps `intel_gpu_top`'s CAP_PERFMON across upgrades) |
 
 ## Layout
 

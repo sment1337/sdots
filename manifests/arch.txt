@@ -22,3 +22,8 @@ vim
 fzf
 lazygit
 conky
+# tmux status bar (tmux/scripts/sysstats.sh): intel_gpu_top for Intel iGPU
+# utilisation, upower for time-to-empty on laptops; attr provides setcap, used
+# by pacman/hooks/intel-gpu-top-perfmon.hook (setcap lives in libcap).
+intel-gpu-tools:intel_gpu_top
+libcap:setcap
