@@ -179,7 +179,11 @@ main() {
 
   if command -v vim >/dev/null 2>&1; then
     log "installing vim plugins (vim-plug)"
-    vim -es -u "$REPO/.vim/.vimrc" +PlugInstall +qall >/dev/null \
+    # Headless normal mode (not -es/-Es Ex mode: vim-plug's s:prepare errors
+    # there with E31) + --sync so PlugInstall waits for jobs/hooks, and stdin
+    # closed so nothing waits on a tty. timeout bounds any hook stall.
+    timeout 600 vim -u "$REPO/.vim/.vimrc" -n -i NONE --not-a-term \
+      +"set nomore" +"PlugInstall --sync" +"qa!" </dev/null >/dev/null \
       || warn "PlugInstall failed — open vim and run :PlugInstall manually"
   fi
 

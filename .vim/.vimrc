@@ -24,7 +24,9 @@ call plug#begin()
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plug 'junegunn/fzf.vim'
 " Plug 'Valloric/YouCompleteMe'
-Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': ['markdown', 'vim-plug']}
+" install_sync: the default mkdp#util#install() spawns a terminal window
+" (term_start), which silently fails or hangs in headless installs
+Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install_sync(v:true) }, 'for': ['markdown', 'vim-plug']}
 call plug#end()
 set rtp+=$HOME/.vim/plugged/fzf
 map \l :Lines<CR>
