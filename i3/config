@@ -13,7 +13,7 @@ set $mod Mod1
 
 # Font for window titles. Will also be used by the bar unless a different font
 # is used in the bar {} block below.
-font pango:monospace 8
+font pango:JetBrainsMono Nerd Font 10
 
 # This font is widely installed, provides lots of unicode glyphs, right-to-left
 # text rendering and scalability on retina/hidpi displays (thanks to pango).
@@ -44,6 +44,24 @@ bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOU
 # Use Mouse+$mod to drag floating windows to their wanted position
 floating_modifier $mod
 
+# ---------------- liquid-glass look ----------------
+# gaps so the blurred wallpaper shows through between windows
+gaps inner 12
+gaps outer 8
+smart_borders on
+
+# NOTE: conky manages itself as window-type 'desktop' (own_window_type in
+# conky.conf) so i3 keeps it at the bottom of the stack — do NOT float it.
+
+# violet glass border palette
+client.focused          #a78bfa #3b2b63 #f5f2ff #b18cff #a78bfa
+client.focused_inactive #4a3a78 #2a2140 #c3b8e0 #2a2140 #4a3a78
+client.unfocused        #352a56 #1d1533 #9a8fb8 #1d1533 #352a56
+client.urgent           #ff5c8a #3b1f2b #ffffff #ff5c8a #ff5c8a
+client.placeholder      #000000 #1d1533 #ffffff #1d1533 #000000
+client.background       #1d1533
+# ----------------------------------------------------
+
 # start a terminal
 #bindsym $mod+Return exec i3-sensible-terminal
 bindsym $mod+Return exec terminator
@@ -51,8 +69,8 @@ bindsym $mod+Return exec terminator
 # kill focused window
 bindsym $mod+Shift+q kill
 
-# start dmenu (a program launcher)
-bindsym $mod+d exec --no-startup-id dmenu_run
+# app launcher (rofi glass theme)
+bindsym $mod+d exec --no-startup-id $HOME/.config/rofi/launch.sh
 # A more modern dmenu replacement is rofi:
 # bindcode $mod+40 exec "rofi -modi drun,run -show drun"
 # There also is i3-dmenu-desktop which only displays applications shipping a
@@ -193,6 +211,24 @@ bindsym $mod+r mode "resize"
 #        status_command i3status
 #}
 exec_always --no-startup-id $HOME/.config/polybar/launch.sh
-#exec --no-startup-id nitrogen --set-zoom-fill ~/Downloads/1366x768.jpg
-exec --no-startup-id python3 $HOME/.config/nitrogen/scraper.py
-#exec --no-startup-id picom -b -i 0.9
+# screen-resize watcher: noVNC "remote resizing" changes the Xvnc screen size;
+# polybar can't reflow, so restart it when the size changes
+exec_always --no-startup-id $HOME/.config/polybar/resize-watcher.sh
+# compositor — backend depends on where we're running:
+#  * Xvnc/VNC sessions: picom --backend xrender. The GLX/llvmpipe path draws
+#    around TigerVNC's RFB scanout -> clients get stale frames (no incremental
+#    updates). XRender composites via normal X protocol ops, so VNC sees it.
+#  * real displays: full glx config (blur/dual_kawase glass).
+exec_always --no-startup-id bash -c 'pkill -x picom || true; sleep 0.3; if xrandr 2>/dev/null | grep -q "^VNC-"; then exec picom -b --backend xrender --config $HOME/.config/picom/picom.conf; else exec picom -b --config $HOME/.config/picom/picom.conf; fi'
+# wallpaper (nitrogen restores from bg-saved.cfg).
+# NOTE: don't auto-run scraper.py here — it deletes + re-downloads BG.jpg and
+# races with --restore (caused black screens). Run it manually when you want a
+# fresh wallpaper: python3 ~/.config/nitrogen/scraper.py
+exec --no-startup-id nitrogen --restore
+# VNC desktops must never idle-lock: Xvnc's default 10-min screensaver timer
+# triggers xss-lock -> i3lock, which renders as an invisible gray void over VNC.
+# (Xvnc has no DPMS; 'xset s off' kills the saver timeout. Safe to skip on real
+# monitors — hence the VNC- output check.)
+exec --no-startup-id bash -c 'xrandr 2>/dev/null | grep -q "^VNC-" && xset s off'
+# conky glass HUD panel
+exec --no-startup-id conky -c $HOME/.config/conky/conky.conf

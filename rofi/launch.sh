@@ -1,2 +1,3 @@
 #!/bin/bash
-rofi -show combi -combi-modes "ssh,window,run" -modes combi -theme arthur
+# rofi launcher — glass-violet theme (blurred by picom's Rofi rule)
+rofi -show combi -combi-modes "ssh,window,run,drun" -modes combi -theme glass-violet
