@@ -1,0 +1,16 @@
+[Unit]
+Description=noVNC bridge (browser access to the local VNC desktop)
+After=network.target
+
+[Service]
+Type=simple
+User=%i
+# Listens on all interfaces (0.0.0.0) so browsers on other devices can connect
+# directly; VNC itself stays localhost-only. Websocket clients still need the
+# VNC password to authenticate to Xvnc.
+ExecStart=/usr/bin/websockify --web=/usr/share/webapps/novnc 6080 127.0.0.1:5901
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

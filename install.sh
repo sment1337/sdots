@@ -14,10 +14,26 @@ set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MANIFESTS="$REPO/manifests"
 FAILED_STEPS=()
+# SDOTS_YES=1 or --yes skips the interactive package-install confirmation.
+ASSUME_YES="${SDOTS_YES:-0}"
 
 log()  { printf '[install] %s\n' "$*"; }
 warn() { printf '[install][WARN] %s\n' "$*" >&2; }
 fail() { printf '[install][FAIL] %s\n' "$*" >&2; FAILED_STEPS+=("$*"); }
+
+# confirm "prompt" — Y default; reads from the terminal so it works even if
+# stdout is piped. Returns 0 on yes, 1 on no/EOF. Honours ASSUME_YES.
+confirm() {
+  [[ "$ASSUME_YES" == 1 ]] && return 0
+  if ! : 2>/dev/null < /dev/tty; then
+    warn "no terminal available — cannot confirm; re-run with --yes to force install"
+    return 1
+  fi
+  local reply
+  printf '%s [Y/n] ' "$1" > /dev/tty
+  IFS= read -r reply < /dev/tty || return 1   # EOF/Ctrl-D => decline
+  case "$reply" in ''|y|Y|yes|YES) return 0 ;; *) return 1 ;; esac
+}
 
 # ---------------------------------------------------------------- OS detect
 detect_os() {
@@ -74,11 +90,22 @@ install_from_manifest() { # $1 = os name, $2 = manifest basename
   case "$family" in
     arch)
       if command -v yay >/dev/null 2>&1; then
+        local aur_pkgs=()
+        [[ -r "$MANIFESTS/arch-aur.txt" ]] && \
+          mapfile -t aur_pkgs < <(grep -vE '^[[:space:]]*(#|$)' "$MANIFESTS/arch-aur.txt")
+        log "packages missing on this machine:"
+        printf '  repo: %s\n' "${missing[*]}"
+        [[ ${#aur_pkgs[@]} -gt 0 ]] && printf '  aur:  %s\n' "${aur_pkgs[*]}"
+        if ! confirm "Install these packages?"; then
+          log "arch: package install declined — skipping"
+          return 0
+        fi
         log "yay: installing ${missing[*]}"
         yay -S --needed --noconfirm "${missing[@]}" || fail "yay install failed (${missing[*]})"
-        [[ -r "$MANIFESTS/arch-aur.txt" ]] && \
-          yay -S --needed --noconfirm $(grep -v '^#' "$MANIFESTS/arch-aur.txt" | grep -v '^$' || true) \
-          || warn "aur manifest needs manual review if any name is wrong"
+        if [[ ${#aur_pkgs[@]} -gt 0 ]]; then
+          yay -S --needed --noconfirm "${aur_pkgs[@]}" \
+            || warn "aur manifest needs manual review if any name is wrong"
+        fi
       else
         warn "yay not found; install yay manually, then re-run (skipping: ${missing[*]})"
       fi ;;
@@ -120,7 +147,13 @@ link() { # $1 = repo-relative source, $2 = destination under $HOME
 }
 
 main() {
-  local os family
+  local os family arg
+  for arg in "$@"; do
+    case "$arg" in
+      -y|--yes) ASSUME_YES=1 ;;
+      *) warn "unknown argument: $arg (supported: --yes)" ;;
+    esac
+  done
   os="$(detect_os)"
   log "detected OS family: $os (pkg family: $(pkg_family "$os"))"
 
@@ -151,6 +184,9 @@ main() {
   # conky configs exist on arch/ubuntu only (per decision); install.sh on
   # popOS/WSL/macOS still links them if present — harmless either way:
   link "conky"               ".config/conky"
+  # TigerVNC (1.16+ layout: config in ~/.config/tigervnc; password is a
+  # machine-local file there too — created once with `vncpasswd`)
+  link "vnc/config"           ".config/tigervnc/config"
 
   # 3. Plugin managers.
   #  3a. tmux plugins: clone every `set -g @plugin 'user/repo'` from
@@ -238,6 +274,57 @@ main() {
         || fail "could not install pacman hook to $hook_dst"
     else
       warn "no passwordless sudo; install the hook manually: sudo install -Dm644 '$hook_src' '$hook_dst'"
+    fi
+  fi
+
+  # 4c. TigerVNC + noVNC system setup — Arch only. Makes the browser-VNC
+  #     desktop reproducible: systemd-managed Xvnc :1 (vncserver@:1) plus a
+  #     websockify bridge (websock@$USER -> novnc on :6080). /etc files are
+  #     root-owned policy, installed via sudo -n like the pacman hook.
+  #     NB: ~/.config/tigervnc/passwd is machine-local — create once with
+  #     `vncpasswd`. Full background: vnc/README.md.
+  if [[ "$os" == arch ]] && command -v systemctl >/dev/null 2>&1; then
+    mand_src="$REPO/vnc/vncserver-config-mandatory"
+    mand_dst="/etc/tigervnc/vncserver-config-mandatory"
+    ws_src="$REPO/vnc/websock@.service"
+    ws_dst="/etc/systemd/system/websock@.service"
+    users_file="/etc/tigervnc/vncserver.users"
+    if ! sudo -n true 2>/dev/null; then
+      warn "no passwordless sudo — VNC system setup skipped; see vnc/README.md for manual steps"
+    else
+      if [[ -f "$mand_dst" ]] && cmp -s "$mand_src" "$mand_dst"; then
+        log "vncserver-config-mandatory already installed"
+      else
+        sudo -n install -D -m 644 "$mand_src" "$mand_dst" \
+          && log "installed $mand_dst" \
+          || fail "could not install $mand_dst"
+      fi
+      if [[ -f "$ws_dst" ]] && cmp -s "$ws_src" "$ws_dst"; then
+        log "websock@.service already installed"
+      else
+        sudo -n install -D -m 644 "$ws_src" "$ws_dst" \
+          && sudo -n systemctl daemon-reload \
+          && log "installed $ws_dst (+daemon-reload)" \
+          || fail "could not install $ws_dst"
+      fi
+      if ! grep -qx ":1=$USER" "$users_file" 2>/dev/null; then
+        echo ":1=$USER" | sudo -n tee -a "$users_file" >/dev/null \
+          && log "added :1=$USER to $users_file" \
+          || fail "add ':1=$USER' to $users_file manually"
+      else
+        log "$users_file already maps :1=$USER"
+      fi
+      for u in "vncserver@:1.service" "websock@$USER.service"; do
+        if sudo -n systemctl is-enabled -q "$u" 2>/dev/null; then
+          log "$u already enabled"
+        else
+          sudo -n systemctl enable --now "$u" \
+            && log "enabled $u" \
+            || fail "enable failed for $u"
+        fi
+      done
+      [[ -f "$HOME/.config/tigervnc/passwd" ]] \
+        || log "reminder: run 'vncpasswd' once to create ~/.config/tigervnc/passwd"
     fi
   fi
 

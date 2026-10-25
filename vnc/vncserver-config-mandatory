@@ -1,0 +1,13 @@
+# /etc/tigervnc/vncserver-config-mandatory — installed by sdots/install.sh
+# Xvnc options for all VNC sessions on this machine.
+#
+# This file (not ~/.config/tigervnc/config) is where options must live when
+# the session starts via systemd vncserver@:1.service: vncsession parses
+# config as root before dropping privileges and does not pick up the user
+# config reliably. "mandatory" also overrides anything a user sets locally.
+
+session=i3
+geometry=1920x1080
+depth=24
+dpi=96
+localhost

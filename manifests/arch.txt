@@ -1,14 +1,15 @@
 # Arch (pacman). AUR-only names live in arch-aur.txt (installed via yay).
 # conky intentionally appears here and in ubuntu.txt only (per your decision).
 terminator
-i3-wm
+i3-wm:i3
 i3status
-xorg-xrandr
+xorg-xrandr:xrandr
+xorg-xset:xset
 picom
 polybar
 upower
-python-pip
-base-devel
+python-pip:pip
+base-devel:gcc
 wget
 sddm
 nitrogen
@@ -27,3 +28,17 @@ conky
 # by pacman/hooks/intel-gpu-top-perfmon.hook (setcap lives in libcap).
 intel-gpu-tools:intel_gpu_top
 libcap:setcap
+
+# --- glass rice + VNC stack (i3 liquid-glass refresh) ---
+# VNC: Xvnc server (comes from tigervnc) + novnc/websockify for browser access
+# (novnc/websockify are AUR, listed in arch-aur.txt)
+tigervnc:Xvnc
+xorg-server:Xorg
+xorg-xinit:xinit
+network-manager-applet:nm-applet
+i3lock
+xss-lock
+dex
+# fonts: polybar/rofi icon+text font (no binary to probe — gets flagged every
+# run and yay skips it when installed; harmless)
+ttf-jetbrains-mono-nerd

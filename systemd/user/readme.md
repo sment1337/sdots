@@ -9,8 +9,6 @@
 3. `$ systemctl --user start secure-tunnel@smac.service`
 4. `$ systemctl --user enable secure-tunnel@smac.service`
 
-#### websock.service
-1. `$ sudo cp sdots/systemd/user/websock.service /etc/systemd/system/websock.service`
-2. `$ sudo chmod -x websock.service`
-3. `$ systemctl daemon-reload`
-4. `$ sudo systemctl start websock.service`
+#### VNC / noVNC units
+Moved: the websockify bridge is a **system** unit now, installed and
+documented by `sdots/install.sh` + `sdots/vnc/README.md`.

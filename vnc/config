@@ -1,0 +1,12 @@
+# TigerVNC server options (systemd vncserver@:1.service + vncsession)
+# Managed via: sudo systemctl enable --now vncserver@:1.service
+# (:1=$USER mapping lives in /etc/tigervnc/vncserver.users)
+#
+# localhost: only accept local connections. Browser access goes through
+# websockify@/novnc on this same host; reach it remotely via SSH tunnel:
+#   ssh -L 6080:localhost:6080 <host>
+session=i3
+geometry=1920x1080
+depth=24
+dpi=96
+localhost
