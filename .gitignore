@@ -6,3 +6,6 @@
 /.vim/pack/
 /.vim/.netrwhist
 .local.zshrc
+
+# machine-local: set per box by `nitrogen` GUI/restore
+/nitrogen/bg-saved.cfg
