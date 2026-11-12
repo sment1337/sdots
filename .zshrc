@@ -17,13 +17,14 @@ typeset -U path  # keep path array free of duplicates
 path=("$HOME/.local/bin" $path)
 
 # _zsh_ext <pkg-dir-name> — locate an optional zsh extension wherever this machine
-# installed it: distros use /usr/share, Homebrew on Apple Silicon /opt/homebrew/share,
+# installed it: Debian/Ubuntu /usr/share, Arch /usr/share/zsh/plugins, Homebrew on Apple
+# Silicon /opt/homebrew/share, Intel Macs /usr/local/share, vendored copies under
 # Intel Macs /usr/local/share, vendored copies ~/.local/share/zsh. Prints the file and
 # returns 0 when found; callers must treat "not found" as normal (see _gnu below for
 # why hardcoding one layout silently disabled a feature on other platforms).
 _zsh_ext() {
     local n="$1" d
-    for d in /usr/share /opt/homebrew/share /usr/local/share "$HOME/.local/share/zsh"; do
+    for d in /usr/share /usr/share/zsh/plugins /opt/homebrew/share /usr/local/share "$HOME/.local/share/zsh"; do
         [[ -f "$d/$n/$n.zsh" ]] && { printf '%s' "$d/$n/$n.zsh"; return 0; }
     done
     return 1
@@ -143,9 +144,15 @@ if [ "$color_prompt" = yes ]; then
 
     configure_prompt
 
-    # enable syntax-highlighting (location probed, not hardcoded — see _zsh_ext)
-    if _ext="$(_zsh_ext zsh-syntax-highlighting)"; then
-        . "$_ext"
+    # enable syntax-highlighting (location probed — see _zsh_ext). This plugin wraps ZLE
+    # widgets, so upstream wants it sourced LAST: capture the path here and source it at the
+    # bottom of this file. The style table below is plain array assignment, order-independent.
+    if _ZSH_HL="$(_zsh_ext zsh-syntax-highlighting)"; then
+        # Declared here because the style table below now runs BEFORE the plugin is sourced
+        # (it wraps ZLE widgets, so upstream wants sourcing last). Without this, assigning to
+        # an undeclared assoc array dies with "assignment to invalid subscript range" and
+        # silently aborts the rest of .zshrc — including the source at the bottom.
+        typeset -gA ZSH_HIGHLIGHT_STYLES
         ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern)
         ZSH_HIGHLIGHT_STYLES[default]=none
         ZSH_HIGHLIGHT_STYLES[unknown-token]=fg=white,underline
@@ -276,10 +283,13 @@ alias vi='vim -u ~/.vim/.vimrc'
 alias la='ls -A'
 alias l='ls -CF'
 alias cht='f() { curl cht.sh/$1 };f'
-alias power='upower -i /org/freedesktop/UPower/devices/battery_BAT0'
-alias bl='f() { echo $1 | sudo tee /sys/class/leds/smc::kbd_backlight/brightness };f'
+# These helpers wrap tools that only exist on some platforms; defining them blindly meant a
+# Linux-only alias errored on the Mac. Same probe-as-you-go rule as _gnu above: no tool, no
+# alias — and nothing shadowed when the tool shows up later.
+command -v upower >/dev/null 2>&1 && alias power='upower -i /org/freedesktop/UPower/devices/battery_BAT0'
+[ -w /sys/class/leds/smc::kbd_backlight/brightness ] && alias bl='f() { echo $1 | sudo tee /sys/class/leds/smc::kbd_backlight/brightness };f'
 alias pfzf="fzf --preview='less {}' --bind pgdn:preview-page-down,pgup:preview-page-up"
-alias port='f() {sudo nmap -sU $(dig -4 +short myip.opendns.com @resolver1.opendns.com) -p $1}; f'
+command -v nmap >/dev/null 2>&1 && command -v dig >/dev/null 2>&1 && alias port='f() {sudo nmap -sU $(dig -4 +short myip.opendns.com @resolver1.opendns.com) -p $1}; f'
 
 # enable auto-suggestions based on the history (location probed — see _zsh_ext)
 if _ext="$(_zsh_ext zsh-autosuggestions)"; then
@@ -323,6 +333,9 @@ done; unset p
 export PATH="$PATH:$HOME/.lmstudio/bin"
 
 
+
+# Sourced last on purpose: it wraps widgets created by the autosuggestion plugin above.
+[[ -n "${_ZSH_HL:-}" ]] && . "$_ZSH_HL"
 
 # Local machine-specific overrides (not tracked by git)
 [ -f "$HOME/.local.zshrc" ] && source "$HOME/.local.zshrc"
