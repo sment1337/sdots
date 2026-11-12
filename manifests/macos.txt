@@ -38,3 +38,10 @@ tea
 tmux
 typst
 uv
+
+# Optional zsh extensions sourced by ~/.zshrc. These two lines are dotfile deps, NOT
+# `brew leaves` output — regenerate the list above without them (see line 1-3 note). The
+# trailing ":" marks a data-only package: nothing to run, so install.sh probes the extension
+# files it installs under $(brew --prefix)/share instead of `command -v`.
+zsh-autosuggestions
+zsh-syntax-highlighting

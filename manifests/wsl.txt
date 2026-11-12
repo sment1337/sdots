@@ -7,3 +7,9 @@ autojump
 vim
 fzf
 lazygit
+
+# Optional zsh extensions sourced by ~/.zshrc. The trailing ":" marks a data-only
+# package: nothing to run, so install.sh probes the extension files (ZSH_EXT_DIRS) instead
+# of `command -v`, and .zshrc resolves whichever layout the package used.
+zsh-autosuggestions:
+zsh-syntax-highlighting:

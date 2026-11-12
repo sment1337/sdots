@@ -70,20 +70,44 @@ pkg_family() {  # arch | apt | brew | none
 # ------------------------------------------------------- package install
 manifest_for() { case "$1" in arch) echo arch;; popos) echo popOS;; ubuntu|wsl) echo "$1";; macos) echo macos;; esac; }
 
+# Candidate dirs for data-only packages (`name:` lines, no binary to probe). MUST stay in
+# lockstep with _zsh_ext in .zshrc: if the two lists disagree, install.sh keeps flagging a
+# package that is already installed and reinstalls it on every run.
+ZSH_EXT_DIRS="/usr/share /usr/share/zsh/plugins /opt/homebrew/share /usr/local/share $HOME/.local/share/zsh"
+zsh_ext_present() { # $1 = extension name; 0 when its entrypoint exists in any layout
+  local d
+  for d in $ZSH_EXT_DIRS; do [[ -f "$d/$1/$1.zsh" ]] && return 0; done
+  return 1
+}
+
 install_from_manifest() { # $1 = os name, $2 = manifest basename
   local os="$1" base="$2" file="$MANIFESTS/$2.txt" pkg missing=() family
   file="$MANIFESTS/$2.txt"
   family="$(pkg_family "$os")"
   [[ -r "$file" ]] || { warn "no manifest $file — skipping package install"; return 0; }
-  local line pkg cmd
+  local line pkg cmd tap name
   while read -r line; do
     case "$line" in ''|\#*) continue ;; esac
     if [[ "$line" == *:* ]]; then pkg="${line%%:*}"; cmd="${line##*:}"
     else pkg="$line"; cmd="$line"; fi
-    case "$pkg" in */*) warn "$pkg is a tap package — install manually"; continue ;; esac
+    # Tap-qualified formula (homebrew-zathura/zathura/x): the tap is part of what the
+    # manifest declares, so add it instead of dumping the job on the human.
+    tap=""; name="$pkg"
+    if [[ "$pkg" == */* ]]; then
+      tap="${pkg%/*}"; name="${pkg##*/}"
+      [[ "$family" == brew ]] || { warn "$pkg is a tap package — install manually"; continue; }
+    fi
+    # A trailing ":" (empty command) means data-only package: nothing to run, probe files.
     case "$family" in
-      brew) brew list --formula --versions "$pkg" 2>/dev/null | grep -q . || missing+=("$pkg") ;;
-      *)    command -v "$cmd" >/dev/null 2>&1 || missing+=("$pkg") ;;
+      brew)
+        if [[ -n "$tap" ]] && ! brew tap 2>/dev/null | grep -qxF -- "$tap"; then
+          log "brew tap $tap (declared by $pkg)"
+          brew tap "$tap" >/dev/null 2>&1 || { warn "brew tap $tap failed — install $name manually"; continue; }
+        fi
+        brew list --formula --versions "$name" 2>/dev/null | grep -q . || missing+=("$pkg") ;;
+      *)
+        if [[ -z "$cmd" ]]; then zsh_ext_present "$pkg" || missing+=("$pkg")
+        else command -v "$cmd" >/dev/null 2>&1 || missing+=("$pkg"); fi ;;
     esac
   done < "$file"
   if [[ ${#missing[@]} -eq 0 ]]; then
