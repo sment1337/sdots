@@ -16,6 +16,19 @@ WORDCHARS=${WORDCHARS//\/} # Don't consider certain characters part of the word
 typeset -U path  # keep path array free of duplicates
 path=("$HOME/.local/bin" $path)
 
+# _zsh_ext <pkg-dir-name> — locate an optional zsh extension wherever this machine
+# installed it: distros use /usr/share, Homebrew on Apple Silicon /opt/homebrew/share,
+# Intel Macs /usr/local/share, vendored copies ~/.local/share/zsh. Prints the file and
+# returns 0 when found; callers must treat "not found" as normal (see _gnu below for
+# why hardcoding one layout silently disabled a feature on other platforms).
+_zsh_ext() {
+    local n="$1" d
+    for d in /usr/share /opt/homebrew/share /usr/local/share "$HOME/.local/share/zsh"; do
+        [[ -f "$d/$n/$n.zsh" ]] && { printf '%s' "$d/$n/$n.zsh"; return 0; }
+    done
+    return 1
+}
+
 # hide EOL sign ('%')
 PROMPT_EOL_MARK=""
 
@@ -130,9 +143,9 @@ if [ "$color_prompt" = yes ]; then
 
     configure_prompt
 
-    # enable syntax-highlighting
-    if [ -f /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]; then
-        . /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+    # enable syntax-highlighting (location probed, not hardcoded — see _zsh_ext)
+    if _ext="$(_zsh_ext zsh-syntax-highlighting)"; then
+        . "$_ext"
         ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern)
         ZSH_HIGHLIGHT_STYLES[default]=none
         ZSH_HIGHLIGHT_STYLES[unknown-token]=fg=white,underline
@@ -216,36 +229,49 @@ precmd() {
     fi
 }
 
-# enable color support of ls, less and man, and also add handy aliases
-if [ -x /usr/bin/dircolors ]; then
-    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+# enable color support of ls, less and man, and also add handy aliases.
+# Probe per TOOL instead of assuming a GNU userland: `--color` is a GNU long option,
+# and BSD builds abort on it with "ls: illegal option -- -" — which is exactly what
+# every `ll` did before this probe existed. Probing the tool's OWN banner beats both a
+# uname check (Apple ships GNU grep) and an exit-code check (grep exits 1 on no match).
+# BSD ls colours with -G + LSCOLORS instead, and a tool that isn't installed here at
+# all simply gets no alias.
+_gnu() { # 0 = this build is the GNU one, so it accepts GNU long options
+    command -v "$1" >/dev/null 2>&1 || return 1
+    "$1" --version 2>&1 | head -1 | grep -qiE 'GNU|iproute2'
+}
+
+_ls_opt=$(_gnu ls && printf '%s' '--color=auto' || printf '%s' '-G')   # BSD ls: -G + LSCOLORS
+alias ls="ls $_ls_opt"
+#alias dir="dir $_ls_opt"
+#alias vdir="vdir $_ls_opt"
+for _t in grep fgrep egrep diff ip; do
+    _gnu "$_t" && alias "$_t=$_t --color=auto"
+done; unset _t
+
+_dc="$(command -v dircolors 2>/dev/null || command -v gdircolors 2>/dev/null)"   # GNU-only, absent on macOS
+if [ -n "$_dc" ]; then
+    test -r ~/.dircolors && eval "$("$_dc" -b ~/.dircolors)" || eval "$("$_dc" -b)"
     export LS_COLORS="$LS_COLORS:ow=30;44:" # fix ls color for folders with 777 permissions
+fi; unset _dc
 
-    alias ls='ls --color=auto'
-    #alias dir='dir --color=auto'
-    #alias vdir='vdir --color=auto'
+export LESS_TERMCAP_mb=$'\E[1;31m'     # begin blink
+export LESS_TERMCAP_md=$'\E[1;36m'     # begin bold
+export LESS_TERMCAP_me=$'\E[0m'        # reset bold/blink
+export LESS_TERMCAP_so=$'\E[01;33m'    # begin reverse video
+export LESS_TERMCAP_se=$'\E[0m'        # reset reverse video
+export LESS_TERMCAP_us=$'\E[1;32m'     # begin underline
+export LESS_TERMCAP_ue=$'\E[0m'        # reset underline
 
-    alias grep='grep --color=auto'
-    alias fgrep='fgrep --color=auto'
-    alias egrep='egrep --color=auto'
-    alias diff='diff --color=auto'
-    alias ip='ip --color=auto'
-
-    export LESS_TERMCAP_mb=$'\E[1;31m'     # begin blink
-    export LESS_TERMCAP_md=$'\E[1;36m'     # begin bold
-    export LESS_TERMCAP_me=$'\E[0m'        # reset bold/blink
-    export LESS_TERMCAP_so=$'\E[01;33m'    # begin reverse video
-    export LESS_TERMCAP_se=$'\E[0m'        # reset reverse video
-    export LESS_TERMCAP_us=$'\E[1;32m'     # begin underline
-    export LESS_TERMCAP_ue=$'\E[0m'        # reset underline
-
-    # Take advantage of $LS_COLORS for completion as well
+# Take advantage of $LS_COLORS for completion as well — only if we actually have a
+# palette (a BSD box without dircolors has none, and an empty split would set nothing).
+if [ -n "${LS_COLORS:-}" ]; then
     zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
     zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#)*=0=01;31'
 fi
 
 # some more ls aliases
-alias ll='ls -ltrah --color=auto'
+alias ll="ls -ltrah $_ls_opt"   # _ls_opt chosen by the probe above
 alias vi='vim -u ~/.vim/.vimrc'
 alias la='ls -A'
 alias l='ls -CF'
@@ -255,9 +281,9 @@ alias bl='f() { echo $1 | sudo tee /sys/class/leds/smc::kbd_backlight/brightness
 alias pfzf="fzf --preview='less {}' --bind pgdn:preview-page-down,pgup:preview-page-up"
 alias port='f() {sudo nmap -sU $(dig -4 +short myip.opendns.com @resolver1.opendns.com) -p $1}; f'
 
-# enable auto-suggestions based on the history
-if [ -f /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]; then
-    . /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+# enable auto-suggestions based on the history (location probed — see _zsh_ext)
+if _ext="$(_zsh_ext zsh-autosuggestions)"; then
+    . "$_ext"
     # change suggestion color
     ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#999'
 fi
