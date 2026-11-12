@@ -218,8 +218,18 @@ main() {
     # Headless normal mode (not -es/-Es Ex mode: vim-plug's s:prepare errors
     # there with E31) + --sync so PlugInstall waits for jobs/hooks, and stdin
     # closed so nothing waits on a tty. timeout bounds any hook stall.
+    #
+    # NB: redirect stderr AS WELL AS stdout (2>&1). Vim only honours our closed
+    # stdin while it has no console to fall back on: if fd 2 is still the pty,
+    # vim's console setup opens /dev/tty and dup2's it over fd 0 — so </dev/null
+    # silently stops applying, and the hit-enter prompt that PlugInstall's own
+    # progress output ("Installing plugins", fzf's installer, markdown-preview's
+    # curl bar) raises blocks on a keyboard read. Since vim also moves itself into
+    # its own process group (mch_init), that pgrp is a *background* pgrp of the
+    # terminal and the read earns it SIGTTIN: state T in `ps`, invisible stall
+    # until timeout fires. With no tty on any stdio fd vim stays fully dumb.
     timeout 600 vim -u "$REPO/.vim/.vimrc" -n -i NONE --not-a-term \
-      +"set nomore" +"PlugInstall --sync" +"qa!" </dev/null >/dev/null \
+      +"set nomore" +"PlugInstall --sync" +"qa!" </dev/null >/dev/null 2>&1 \
       || warn "PlugInstall failed — open vim and run :PlugInstall manually"
   fi
 
