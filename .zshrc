@@ -12,6 +12,10 @@ setopt promptsubst         # enable command substitution in prompt
 
 WORDCHARS=${WORDCHARS//\/} # Don't consider certain characters part of the word
 
+# Put user-local binaries first so they shadow distro versions (e.g. fzf)
+typeset -U path  # keep path array free of duplicates
+path=("$HOME/.local/bin" $path)
+
 # hide EOL sign ('%')
 PROMPT_EOL_MARK=""
 
@@ -272,7 +276,7 @@ export RANGER_LOAD_DEFAULT_RC="FALSE"
 #bindkey -v
 
 # Set up fzf key bindings and fuzzy completion
-fb="$(command -v zfz 2>/dev/null || command -v fzf 2>/dev/null)"
+fb="$(command -v fzf 2>/dev/null)"
 [ -n "$fb" ] && source <("$fb" --zsh)
 
 # To have preview in fzf
@@ -290,7 +294,7 @@ _fzf_comprun() {
 for p in /opt/homebrew/bin /usr/local/ffmpeg/bin; do
   case ":$PATH:" in *":$p:"*) ;; *) [ -d "$p" ] && PATH="$p:$PATH" ;; esac
 done; unset p
-export PATH="$PATH:$HOME/.lmstudio/bin:$HOME/.local/bin"
+export PATH="$PATH:$HOME/.lmstudio/bin"
 
 
 
