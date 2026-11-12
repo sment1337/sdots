@@ -24,6 +24,11 @@
 #   [ ] step 2 creates exactly 5 links (.zshrc, .vim, .tmux, .tmux.conf, .config/mc) and prints
 #       "not used on macos — skipping" for the other 12; ~/.config stays otherwise empty.
 #   [ ] `zsh -i -c exit` is silent, `alias ll` shows '-G' (not --color), no LS_COLORS/list-colors.
+#   [ ] step 1d was only ever exercised with a STUBBED apt-cache (Ubuntu/Pop ship tmux 3.4 while
+#       upstream is 3.8, and this box has no passwordless sudo to compile). On a machine that can
+#       sudo: confirm it installs build deps, builds into ~/.local/bin/tmux, prints the running-
+#       server caveat, and on the next run logs "already newest (built here)". If ${tag} ever stops
+#       matching tmux's real tarball name (3.6a/3.8 style tags), that is what breaks first.
 #   [ ] Linux box: `dpkg -L zsh-autosuggestions | grep '\.zsh$'` prints <dir>/zsh-<name>/<name>.zsh.
 #       If Debian used another layout, add it to BOTH lists (_zsh_ext in .zshrc AND ZSH_EXT_DIRS
 #       here) or the extension gets reinstalled on every run and the probe lies.
@@ -281,6 +286,74 @@ install_casks() { # $1 = os id; reads manifests/<os>.casks.txt (no file => nothi
   brew install --cask "${missing[@]}" || fail "cask install failed (${missing[*]})"
 }
 
+# 1d. tmux — newest upstream on apt machines: from the archive when it has it, built here when
+#     it doesn't (Pop!_OS/Ubuntu 24.04 ship 3.4 while upstream is 3.8). Arch and brew need nothing
+#     here — they already roll, which is exactly why this function returns early for them. Unlike
+#     fzf there are no prebuilt tmux binaries, so the stale-archive case costs a compiler plus
+#     libevent/ncurses headers; those deps stay in THIS function rather than in every manifest,
+#     because on a machine whose archive is current they would be dead weight forever.
+install_latest_tmux() {
+  local dst="$HOME/.local/bin/tmux" tag line v s best="" best_suite="" act=""
+  [[ "$(pkg_family "$OS_ID")" == apt ]] || return 0
+
+  tag="$(curl -fsSL --max-time 20 https://api.github.com/repos/tmux/tmux/releases/latest 2>/dev/null \
+          | sed -n 's/.*"tag_name":[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)" || tag=""
+  if [[ -z "$tag" ]]; then
+    fail "could not resolve the latest tmux release (offline? GitHub API limit?) — left $(command -v tmux >/dev/null && tmux -V || echo 'no tmux') alone"
+    return 0
+  fi
+
+  # Highest version any enabled suite offers, and which suite that was ("-backports" matters: it
+  # needs apt-get -t, the release pocket's version does not).
+  while read -r v s; do
+    [[ -n "$v" ]] || continue
+    if [[ -z "$best" ]] || dpkg --compare-versions "${v%%:*}" gt "${best%%:*}"; then best="$v"; best_suite="$s"; fi
+  done < <(apt-cache madison tmux 2>/dev/null | awk -F' \\| ' '{v=$2; gsub(/^ +| +$/,"",v); s=""; if (match($3,/[a-z]+-(updates|backports|security)/)) s=substr($3,RSTART,RLENGTH); print v, s}')
+
+  # What would actually run after this function: our own build shadows the package on $path.
+  [[ -x "$dst" ]] && act="$("$dst" -V 2>/dev/null | awk '{print $2}')"
+  if [[ -n "$act" ]] && dpkg --compare-versions "$act" ge "$tag"; then
+    log "tmux $act already newest (built here) — nothing to do"
+    return 0
+  fi
+  if [[ -n "$best" ]] && dpkg --compare-versions "${best%%:*}" ge "$tag"; then
+    [[ -x "$dst" ]] && { rm -f "$dst"; log "removed ${dst#$HOME/}: the archive now ships $best, so a stale local build would shadow it"; }
+    if command -v tmux >/dev/null 2>&1 && dpkg --compare-versions "$(tmux -V | awk '{print $2}')" ge "$tag"; then
+      log "tmux $(tmux -V | awk '{print $2}') already newest from the archive — nothing to do"
+      return 0
+    fi
+    if sudo -n true 2>/dev/null; then
+      sudo -n apt-get update >/dev/null && sudo -n apt-get install -y --no-install-recommends \
+        ${best_suite:+-t $best_suite} tmux \
+        && log "apt: installed tmux $(tmux -V | awk '{print $2}') from the archive" \
+        || fail "apt install of tmux $best failed (suite: ${best_suite:-default})"
+    else
+      warn "no passwordless sudo; run manually: sudo apt-get update && sudo apt-get install${best_suite:+ -t $best_suite} tmux"
+    fi
+    return 0
+  fi
+
+  # Archive is stale -> build upstream. Deps are installed only because we are about to compile.
+  if ! sudo -n true 2>/dev/null; then
+    fail "tmux $tag needs a local build (archive has ${best:-nothing}) but no passwordless sudo for the toolchain: sudo apt-get install -y --no-install-recommends build-essential pkg-config autoconf automake libevent-dev ncurses-dev"
+    return 0
+  fi
+  log "archive offers ${best:-nothing} < upstream $tag — building from source (needs libevent-dev, ncurses-dev)"
+  sudo -n apt-get install -y --no-install-recommends build-essential pkg-config autoconf automake \
+    libevent-dev ncurses-dev >/dev/null || { fail "could not install tmux's build deps"; return 0; }
+  local tmp; tmp="$(mktemp -d)"
+  if curl -fsSL --max-time 120 "https://github.com/tmux/tmux/releases/download/${tag}/tmux-${tag}.tar.gz" \
+     | tar -xzC "$tmp" && cd "$tmp/tmux-$tag" && ./configure --prefix="$HOME/.local" >/dev/null \
+     && make -j"$(nproc)" >/dev/null && make install >/dev/null; then
+    log "built tmux $("$dst" -V | awk '{print $2}') -> ${dst#$HOME/} (shadows the distro package on \$PATH)"
+    command -v tmux >/dev/null 2>&1 && [[ "$(tmux -V | awk '{print $2}')" != "$tag" ]] \
+      && log "note: your running server is still $(tmux -V | awk '{print $2}'); a newer client starts its own — re-check with 'tmux ls' and kill-server when convenient"
+  else
+    fail "could not fetch/build tmux $tag for $(uname -m)"
+  fi
+  cd - >/dev/null; rm -rf "$tmp"
+}
+
 # ---------------------------------------------------- dotfile link (OS-scoped)
 # wanted_by <tag...> — does THIS machine want the file? Tags are detect_os ids
 # (arch, ubuntu, popos, wsl, macos) plus two aliases: "linux" = any Linux family,
@@ -342,6 +415,9 @@ main() {
 
   # 1c. GUI apps the configs in this repo assume (macOS only, prompted, default NO).
   install_casks "$os"
+
+  # 1d. tmux: newest upstream on apt machines — archive if it has it, else built here.
+  install_latest_tmux
 
   # 2. Dotfiles — each link is tagged with the OS families that actually parse it;
   #    untagged = wanted everywhere (see wanted_by). To bring one to macOS later
