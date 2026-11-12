@@ -25,10 +25,12 @@
 #       "not used on macos — skipping" for the other 12; ~/.config stays otherwise empty.
 #   [ ] `zsh -i -c exit` is silent, `alias ll` shows '-G' (not --color), no LS_COLORS/list-colors.
 #   [ ] step 1d was only ever exercised with a STUBBED apt-cache (Ubuntu/Pop ship tmux 3.4 while
-#       upstream is 3.8, and this box has no passwordless sudo to compile). On a machine that can
-#       sudo: confirm it installs build deps, builds into ~/.local/bin/tmux, prints the running-
-#       server caveat, and on the next run logs "already newest (built here)". If ${tag} ever stops
-#       matching tmux's real tarball name (3.6a/3.8 style tags), that is what breaks first.
+#       upstream is 3.8, and this box has no passwordless sudo to compile). Without sudo it must
+#       only WARN and exit 0 — ./install.sh is run unprivileged on purpose here; if you find yourself
+#       putting `fail` back in that branch, make it a decision, not an oversight. With sudo: confirm
+#       it installs build deps, builds into ~/.local/bin/tmux, prints the running-server caveat, and
+#       logs "already newest (built here)" on the next run. If ${tag} ever stops matching tmux's real
+#       tarball name (3.6a/3.8 style tags), that is what breaks first.
 #   [ ] Linux box: `dpkg -L zsh-autosuggestions | grep '\.zsh$'` prints <dir>/zsh-<name>/<name>.zsh.
 #       If Debian used another layout, add it to BOTH lists (_zsh_ext in .zshrc AND ZSH_EXT_DIRS
 #       here) or the extension gets reinstalled on every run and the probe lies.
@@ -299,7 +301,7 @@ install_latest_tmux() {
   tag="$(curl -fsSL --max-time 20 https://api.github.com/repos/tmux/tmux/releases/latest 2>/dev/null \
           | sed -n 's/.*"tag_name":[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)" || tag=""
   if [[ -z "$tag" ]]; then
-    fail "could not resolve the latest tmux release (offline? GitHub API limit?) — left $(command -v tmux >/dev/null && tmux -V || echo 'no tmux') alone"
+    warn "could not check the newest tmux release (offline? GitHub API limit?) — leaving $(command -v tmux >/dev/null && tmux -V || echo 'tmux') as it is"
     return 0
   fi
 
@@ -333,9 +335,11 @@ install_latest_tmux() {
     return 0
   fi
 
-  # Archive is stale -> build upstream. Deps are installed only because we are about to compile.
+  # Archive is stale -> build upstream, but ONLY with a sudo we can use non-interactively: this
+  # installer gets run without sudo on purpose, and "I could not upgrade tmux" is information, not a
+  # half-finished install. Nothing else in main() breaks, so the exit status stays clean too.
   if ! sudo -n true 2>/dev/null; then
-    fail "tmux $tag needs a local build (archive has ${best:-nothing}) but no passwordless sudo for the toolchain: sudo apt-get install -y --no-install-recommends build-essential pkg-config autoconf automake libevent-dev ncurses-dev"
+    warn "tmux $(command -v tmux >/dev/null && tmux -V | awk '{print $2}' || echo 'is') not newest: upstream is $tag and every enabled suite offers ${best:-nothing}. To build it into ~/.local/bin/tmux, run this file once WITH sudo (needs build-essential pkg-config autoconf automake libevent-dev ncurses-dev); otherwise nothing here changed."
     return 0
   fi
   log "archive offers ${best:-nothing} < upstream $tag — building from source (needs libevent-dev, ncurses-dev)"
