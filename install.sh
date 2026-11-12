@@ -9,6 +9,24 @@
 #     $HOME/$USER belongs in git-ignored local.sh, recreated per machine.
 #   * On any failed step, prints which step failed and exits non-zero
 #     instead of continuing with a half-finished install.
+#   * Must stay runnable on bash 3.2 — macOS /bin/bash IS 3.2 and the shebang above says
+#     `env bash`. So: no mapfile/readarray, no `declare -A`, no ${var^^}/${var,,}. Use the
+#     `while read -r` idiom this file already uses everywhere instead; the Arch branch below
+#     used to call mapfile and only survived because that branch never runs on a Mac.
+#
+# UNVERIFIED-ON-MACOS — everything in this file has been exercised on Linux (and against stubbed
+# BSD tools), never on the actual MacBook. A future agent: run ./install.sh there, tick every box,
+# then DELETE this block and say so in the commit message. If a box fails, fix the line it names.
+#   [ ] step 1/1b: logs "[install] fzf <ver> already managed here" (Homebrew's fzf is >= 0.48) —
+#       if it instead fetches a release, that branch was never reachable on a Mac before now.
+#   [ ] step 1c prompts "Install these GUI apps? [y/N]" and installs NOTHING on bare Enter;
+#       `--yes` still installs them. Verify with an app already present: it must not reappear.
+#   [ ] step 2 creates exactly 5 links (.zshrc, .vim, .tmux, .tmux.conf, .config/mc) and prints
+#       "not used on macos — skipping" for the other 12; ~/.config stays otherwise empty.
+#   [ ] `zsh -i -c exit` is silent, `alias ll` shows '-G' (not --color), no LS_COLORS/list-colors.
+#   [ ] Linux box: `dpkg -L zsh-autosuggestions | grep '\.zsh$'` prints <dir>/zsh-<name>/<name>.zsh.
+#       If Debian used another layout, add it to BOTH lists (_zsh_ext in .zshrc AND ZSH_EXT_DIRS
+#       here) or the extension gets reinstalled on every run and the probe lies.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -36,6 +54,21 @@ confirm() {
   printf '%s [Y/n] ' "$1" > /dev/tty
   IFS= read -r reply < /dev/tty || return 1   # EOF/Ctrl-D => decline
   case "$reply" in ''|y|Y|yes|YES) return 0 ;; *) return 1 ;; esac
+}
+
+# confirm_no — same as confirm, but the DEFAULT (bare Enter, EOF, no tty) is NO. For heavy or
+# hard-to-reverse installs: GUI apps and kernel drivers must never land on a machine because
+# someone hit Enter twice while reading something else.
+confirm_no() {
+  [[ "$ASSUME_YES" == 1 ]] && return 0
+  if ! : 2>/dev/null < /dev/tty; then
+    warn "no terminal available — skipping interactive install (re-run with --yes to force)"
+    return 1
+  fi
+  local reply
+  printf '%s [y/N] ' "$1" > /dev/tty
+  IFS= read -r reply < /dev/tty || return 1   # EOF/Ctrl-D => decline
+  case "$reply" in y|Y|yes|YES) return 0 ;; *) return 1 ;; esac
 }
 
 # ---------------------------------------------------------------- OS detect
@@ -85,7 +118,7 @@ install_from_manifest() { # $1 = os name, $2 = manifest basename
   file="$MANIFESTS/$2.txt"
   family="$(pkg_family "$os")"
   [[ -r "$file" ]] || { warn "no manifest $file — skipping package install"; return 0; }
-  local line pkg cmd tap name
+  local line pkg cmd tap name _p found
   while read -r line; do
     case "$line" in ''|\#*) continue ;; esac
     if [[ "$line" == *:* ]]; then pkg="${line%%:*}"; cmd="${line##*:}"
@@ -97,18 +130,26 @@ install_from_manifest() { # $1 = os name, $2 = manifest basename
       tap="${pkg%/*}"; name="${pkg##*/}"
       [[ "$family" == brew ]] || { warn "$pkg is a tap package — install manually"; continue; }
     fi
-    # A trailing ":" (empty command) means data-only package: nothing to run, probe files.
-    case "$family" in
-      brew)
-        if [[ -n "$tap" ]] && ! brew tap 2>/dev/null | grep -qxF -- "$tap"; then
-          log "brew tap $tap (declared by $pkg)"
-          brew tap "$tap" >/dev/null 2>&1 || { warn "brew tap $tap failed — install $name manually"; continue; }
-        fi
-        brew list --formula --versions "$name" 2>/dev/null | grep -q . || missing+=("$pkg") ;;
-      *)
-        if [[ -z "$cmd" ]]; then zsh_ext_present "$pkg" || missing+=("$pkg")
-        else command -v "$cmd" >/dev/null 2>&1 || missing+=("$pkg"); fi ;;
-    esac
+    # Two non-binary forms, both "installed if the data is on disk":
+    #   `name:`  zsh extension -> probe $d/$1/$1.zsh via ZSH_EXT_DIRS (must match _zsh_ext)
+    #   `name:=p1,p2` any of these paths exists -> installed. For fonts/themes: stuff whose
+    #             package name has nothing to do with a command and varies per distro.
+    if [[ "$cmd" == =* ]]; then
+      local -a _paths=(); IFS=, read -ra _paths <<< "${cmd#=}"
+      local _p found=0
+      for _p in "${_paths[@]}"; do [[ -e "$_p" ]] && { found=1; break; }; done
+      (( found )) || missing+=("$pkg")
+    elif [[ "$family" == brew ]]; then
+      if [[ -n "$tap" ]] && ! brew tap 2>/dev/null | grep -qxF -- "$tap"; then
+        log "brew tap $tap (declared by $pkg)"
+        brew tap "$tap" >/dev/null 2>&1 || { warn "brew tap $tap failed — install $name manually"; continue; }
+      fi
+      brew list --formula --versions "$name" 2>/dev/null | grep -q . || missing+=("$pkg")
+    elif [[ -z "$cmd" ]]; then
+      zsh_ext_present "$pkg" || missing+=("$pkg")
+    else
+      command -v "$cmd" >/dev/null 2>&1 || missing+=("$pkg")
+    fi
   done < "$file"
   if [[ ${#missing[@]} -eq 0 ]]; then
     log "$2: everything already installed"
@@ -117,9 +158,12 @@ install_from_manifest() { # $1 = os name, $2 = manifest basename
   case "$family" in
     arch)
       if command -v yay >/dev/null 2>&1; then
-        local aur_pkgs=()
-        [[ -r "$MANIFESTS/arch-aur.txt" ]] && \
-          mapfile -t aur_pkgs < <(grep -vE '^[[:space:]]*(#|$)' "$MANIFESTS/arch-aur.txt")
+        local aur_pkgs=() _l
+        if [[ -r "$MANIFESTS/arch-aur.txt" ]]; then
+          # while-read, not mapfile: bash 3.2 (macOS /bin/bash) has no mapfile — see Contract.
+          while read -r _l; do [[ -n "$_l" ]] && aur_pkgs+=("$_l"); done \
+            < <(grep -vE '^[[:space:]]*(#|$)' "$MANIFESTS/arch-aur.txt")
+        fi
         log "packages missing on this machine:"
         printf '  repo: %s\n' "${missing[*]}"
         [[ ${#aur_pkgs[@]} -gt 0 ]] && printf '  aur:  %s\n' "${aur_pkgs[*]}"
@@ -212,6 +256,31 @@ install_latest_fzf() {
   rm -rf "$tmp"
 }
 
+# 1c. GUI apps, macOS only, asked about separately from the CLI tools above: they are large,
+#     some install kernel/audio drivers, and a terminal script should not drop an app bundle in
+#     /Applications because the operator was reading something else. Hence confirm_no (default NO).
+install_casks() { # $1 = os id; reads manifests/<os>.casks.txt (no file => nothing to ask)
+  local file="$MANIFESTS/$1.casks.txt" cask missing=()
+  [[ "$(pkg_family "$1")" == brew ]] || return 0
+  [[ -r "$file" ]] || { log "no ${file##*/} — no GUI apps declared"; return 0; }
+  command -v brew >/dev/null 2>&1 || { warn "brew missing — cannot install GUI apps from $file"; return 0; }
+  while read -r cask; do
+    case "$cask" in ''|\#*) continue ;; esac
+    brew list --cask --versions "$cask" 2>/dev/null | grep -q . || missing+=("$cask")
+  done < "$file"
+  if [[ ${#missing[@]} -eq 0 ]]; then
+    log "GUI apps: everything already installed"
+    return 0
+  fi
+  log "GUI apps not installed on this machine: ${missing[*]}"
+  if ! confirm_no "Install these GUI apps?"; then
+    log "GUI apps declined — skipping (re-run with --yes, or answer y, to install)"
+    return 0
+  fi
+  log "brew cask: installing ${missing[*]}"
+  brew install --cask "${missing[@]}" || fail "cask install failed (${missing[*]})"
+}
+
 # ---------------------------------------------------- dotfile link (OS-scoped)
 # wanted_by <tag...> — does THIS machine want the file? Tags are detect_os ids
 # (arch, ubuntu, popos, wsl, macos) plus two aliases: "linux" = any Linux family,
@@ -270,6 +339,9 @@ main() {
   # 1b. Tools whose distro build is too old for our dotfiles (fzf). Re-runs are a
   #     no-op; to force an upgrade again: rm ~/.local/bin/fzf && ./install.sh
   install_latest_fzf
+
+  # 1c. GUI apps the configs in this repo assume (macOS only, prompted, default NO).
+  install_casks "$os"
 
   # 2. Dotfiles — each link is tagged with the OS families that actually parse it;
   #    untagged = wanted everywhere (see wanted_by). To bring one to macOS later

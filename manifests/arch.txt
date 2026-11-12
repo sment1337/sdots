@@ -39,12 +39,17 @@ network-manager-applet:nm-applet
 i3lock
 xss-lock
 dex
-# fonts: polybar/rofi icon+text font (no binary to probe — gets flagged every
-# run and yay skips it when installed; harmless)
-ttf-jetbrains-mono-nerd
+# Fonts have no binary to probe either, so they use the `name:=path[,path]` form: installed
+# means one of those files exists. (Was flagged on every run before, which only looked harmless
+# because yay shrugged and skipped it.)
+ttf-jetbrains-mono-nerd:=/usr/share/fonts/TTF/JetBrainsMonoNLNerdFont-Regular.ttf
 
 # Optional zsh extensions sourced by ~/.zshrc. The trailing ":" marks a data-only
 # package: nothing to run, so install.sh probes the extension files (ZSH_EXT_DIRS) instead
 # of `command -v`, and .zshrc resolves whichever layout the package used.
 zsh-autosuggestions:
 zsh-syntax-highlighting:
+
+# ~/.zshrc's `port` alias (needs both tools; it defines itself only when they are present)
+nmap
+bind:dig

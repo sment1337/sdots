@@ -1,6 +1,6 @@
-# Generated 2026-09-22 from `brew leaves` on this Mac.
-# Casks installed: audacity blackhole-2ch inkscape libreoffice obsidian quarto xquartz
-# Regenerate: brew leaves | grep -v "^#" > manifests/macos.txt
+# Generated 2026-09-22 from `brew leaves` on this Mac. GUI apps are NOT part of this list any
+# more: they live in macos.casks.txt and install.sh step 1c asks before installing them.
+# Regenerate only the formulae below: brew leaves | grep -v "^#" > manifests/macos.txt
 age
 autojump
 automake

@@ -1,0 +1,15 @@
+# GUI apps for this repo's configs. Installed by install.sh step 1c only on the brew family,
+# and only after an explicit [y/N] (default NO) prompt — they are large and some ship kernel or
+# audio drivers, so a bare Enter while skimming the log must not drop one in /Applications.
+#   already installed  -> `brew list --cask --versions <token>` prints a version
+#   regenerate         -> brew list --cask | grep -v '^#' > manifests/macos.casks.txt
+# blackhole-2ch is a CoreAudio driver (no .app) and xquartz an X11 server that has to start via
+# Login Items, so neither is "just another app" — keep them declared here anyway: this file's job
+# is stating what the configs assume exists.
+audacity
+blackhole-2ch
+inkscape
+libreoffice
+obsidian
+quarto
+xquartz

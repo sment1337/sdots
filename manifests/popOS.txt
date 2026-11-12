@@ -17,3 +17,8 @@ upower
 # of `command -v`, and .zshrc resolves whichever layout the package used.
 zsh-autosuggestions:
 zsh-syntax-highlighting:
+
+
+# ~/.zshrc's `port` alias (needs both tools; it defines itself only when they are present)
+nmap:nmap
+dnsutils:dig
