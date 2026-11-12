@@ -14,6 +14,9 @@ set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MANIFESTS="$REPO/manifests"
 FAILED_STEPS=()
+# detect_os() result (arch|ubuntu|popos|wsl|macos|unknown), set by main(). link()'s
+# per-file OS tags match against this.
+OS_ID=""
 # SDOTS_YES=1 or --yes skips the interactive package-install confirmation.
 ASSUME_YES="${SDOTS_YES:-0}"
 
@@ -129,20 +132,99 @@ install_from_manifest() { # $1 = os name, $2 = manifest basename
   esac
 }
 
-# ------------------------------------------------------------ dotfile link
-link() { # $1 = repo-relative source, $2 = destination under $HOME
-  local src="$REPO/$1" dst="$HOME/$2"
+# ------------------------------------------- version-pinned tool upstream ships
+# fzf — .zshrc does `source <(fzf --zsh)`, but the `--bash/--zsh` flags only exist
+# in fzf >= 0.48: apt on ubuntu/popOS/WSL ships 0.44, which aborts with
+# "unknown option: --zsh" and silently leaves key bindings + completion unloaded
+# (your _fzf_comprun, preview-page-down and --border=rounded all need >= 0.48 too).
+# We shadow the distro binary instead of patching .zshrc with a version probe; both
+# ~/.profile:26 and ~/.zshrc:16 already put ~/.local/bin first on $path.
+install_latest_fzf() {
+  local dst="$HOME/.local/bin/fzf" os arch ver tag tmp sys
+  case "$(uname -s)" in
+    Linux)  os=linux ;;
+    Darwin) os=darwin ;;
+    *) warn "no fzf release for $(uname -s) — install fzf >= 0.48 manually"; return 0 ;;
+  esac
+  case "$(uname -m)" in
+    x86_64|amd64)   arch=amd64 ;;
+    aarch64|arm64)  arch=arm64 ;;
+    *) warn "no fzf release for $(uname -m) — install fzf >= 0.48 manually"; return 0 ;;
+  esac
+
+  # Capability probe, not version arithmetic: what .zshrc needs is the `--zsh` flag.
+  if [[ -x "$dst" ]] && "$dst" --help 2>&1 | grep -q -- '--zsh'; then
+    log "fzf $("$dst" --version | awk '{print $1}') already managed here — nothing to do"
+    return 0
+  fi
+  sys="$(command -v fzf 2>/dev/null || true)"
+  if [[ -n "$sys" && "$sys" != "$dst" ]] && "$sys" --help 2>&1 | grep -q -- '--zsh'; then
+    log "fzf on PATH ($("$sys" --version | awk '{print $1}')) already supports --zsh — nothing to do"
+    return 0
+  fi
+
+  ver="$(curl -fsSL --max-time 20 https://api.github.com/repos/junegunn/fzf/releases/latest 2>/dev/null \
+          | sed -n 's/.*"tag_name":[[:space:]]*"v\{0,1\}\([^"]*\)".*/\1/p' | head -1)" || ver=""
+  if [[ -z "$ver" ]]; then
+    fail "could not resolve the latest fzf release (offline? GitHub API limit?) — .zshrc needs fzf >= 0.48, installed: ${sys:-none}"
+    return 0
+  fi
+
+  # Upstream publishes no checksums for these assets, so verification is running it.
+  tmp="$(mktemp -d)"
+  if curl -fsSL --max-time 60 \
+       "https://github.com/junegunn/fzf/releases/download/v${ver}/fzf-${ver}-${os}_${arch}.tar.gz" \
+     | tar -xzC "$tmp" fzf \
+     && mkdir -p "$(dirname "$dst")" \
+     && install -m 755 "$tmp/fzf" "$dst"; then
+    if "$dst" --help 2>&1 | grep -q -- '--zsh'; then
+      log "installed fzf $("$dst" --version | awk '{print $1}') -> ${dst#$HOME/} (shadows ${sys:-nothing})"
+    else
+      fail "downloaded fzf $ver still lacks --zsh — inspect $dst"
+    fi
+  else
+    fail "could not fetch fzf v${ver} for ${os}_${arch}"
+  fi
+  rm -rf "$tmp"
+}
+
+# ---------------------------------------------------- dotfile link (OS-scoped)
+# wanted_by <tag...> — does THIS machine want the file? Tags are detect_os ids
+# (arch, ubuntu, popos, wsl, macos) plus two aliases: "linux" = any Linux family,
+# "any" = every OS. An untagged link() call means "any", so portable files
+# (.zshrc, .vim, tmux, mc) stay untagged and read exactly as before.
+wanted_by() {
+  local t
+  for t in "$@"; do
+    case "$t" in
+      any) return 0 ;;
+      linux) [[ ",arch,ubuntu,popos,wsl," == *","$OS_ID","* ]] && return 0 ;;
+      *)     [[ "$t" == "$OS_ID" ]] && return 0 ;;
+    esac
+  done
+  return 1
+}
+
+# link <repo-relative source> <dest under $HOME> [os tags...]
+link() { # $3+ = which OS families want it; omitted = all (see wanted_by)
+  local rel_s="$1" rel_d="$2" src="$REPO/$1" dst="$HOME/$2"; shift 2
   [[ -e "$src" ]] || { warn "missing source $src — skipping"; return 0; }
+  # A file nothing on this OS parses isn't a config, it's litter. The check runs
+  # BEFORE mkdir too, so ~/.config stays as empty as the platform's tooling is.
+  if [[ $# -gt 0 ]] && ! wanted_by "$@"; then
+    log "$rel_d not used on $OS_ID — skipping"
+    return 0
+  fi
   mkdir -p "$(dirname "$dst")"
   if [[ -e "$dst" || -L "$dst" ]]; then
     if [[ "$(readlink "$dst" 2>/dev/null || true)" == "$src" ]]; then
-      log "$2 already linked -> $1"
+      log "$rel_d already linked -> $rel_s"
     else
-      warn "$2 already exists and is not our symlink — leaving it alone"
+      warn "$rel_d already exists and is not our symlink — leaving it alone"
     fi
   else
     ln -sfn "$src" "$dst"
-    log "linked $2 -> $1"
+    log "linked $rel_d -> $rel_s"
   fi
 }
 
@@ -155,38 +237,45 @@ main() {
     esac
   done
   os="$(detect_os)"
+  OS_ID="$os"
   log "detected OS family: $os (pkg family: $(pkg_family "$os"))"
 
   # 1. Packages from the matching manifest.
   install_from_manifest "$os" "$(manifest_for "$os")"
 
-  # 2. Dotfiles.
+  # 1b. Tools whose distro build is too old for our dotfiles (fzf). Re-runs are a
+  #     no-op; to force an upgrade again: rm ~/.local/bin/fzf && ./install.sh
+  install_latest_fzf
+
+  # 2. Dotfiles — each link is tagged with the OS families that actually parse it;
+  #    untagged = wanted everywhere (see wanted_by). To bring one to macOS later
+  #    (e.g. `brew install ranger`), append `macos` to its tag list and nothing else changes.
   link ".zshrc"              ".zshrc"
   link ".vim"                ".vim"
   link "tmux"                ".tmux"            # scripts referenced as $HOME/sdots/tmux/...
   link "tmux/.tmux.conf"     ".tmux.conf"
-  link "i3"                  ".config/i3"
-  link "polybar"             ".config/polybar"
-  link "rofi"                ".config/rofi"
-  link "nitrogen"            ".config/nitrogen"
-  link "htop"                ".config/htop"
-  link "mc"                  ".config/mc"
-  link "picom"               ".config/picom"
-  link "terminator"          ".config/terminator"
-  link "dconf/user"          ".config/dconf/user"
-  link "ranger"              ".config/ranger"
-  link "inkscape"            ".config/inkscape"
-  link "gtk-2.0"             ".config/gtk-2.0"
-  link "mimeapps.list"      ".config/mimeapps.list"
-  link "user-dirs.dirs"     ".config/user-dirs.dirs"
-  link "user-dirs.locale"   ".config/user-dirs.locale"
-  link "pavucontrol.ini"    ".config/pavucontrol.ini"   # verify per-distro placement
-  # conky configs exist on arch/ubuntu only (per decision); install.sh on
-  # popOS/WSL/macOS still links them if present — harmless either way:
-  link "conky"               ".config/conky"
+  link "i3"                  ".config/i3"                linux
+  link "polybar"             ".config/polybar"          linux
+  link "rofi"                ".config/rofi"              linux
+  link "nitrogen"            ".config/nitrogen"         linux
+  link "htop"                ".config/htop"             linux   # macOS runs btop (see macos.txt)
+  link "mc"                  ".config/mc"                          # untagged: mc reads $XDG_CONFIG_HOME on any OS
+  link "picom"               ".config/picom"              linux
+  link "terminator"          ".config/terminator"        linux
+  link "dconf/user"          ".config/dconf/user"        linux   # no gsettings database on macOS
+  link "ranger"              ".config/ranger"            linux   # not in macos.txt yet — add `macos` if that changes
+  link "inkscape"            ".config/inkscape"          linux   # macOS Inkscape prefs live in ~/Library/Preferences/org.inkscape.Inkscape/
+  link "gtk-2.0"             ".config/gtk-2.0"           linux
+  link "mimeapps.list"      ".config/mimeapps.list"      linux   # no xdg-open / shared-mime-info here
+  link "user-dirs.dirs"     ".config/user-dirs.dirs"     linux   # nothing on macOS parses XDG dirs
+  link "user-dirs.locale"   ".config/user-dirs.locale"    linux
+  link "pavucontrol.ini"    ".config/pavucontrol.ini"    linux   # PulseAudio-only mixer
+  # conky configs exist on arch/ubuntu only (per decision); macOS/popOS never
+  # installed conky, so the link was pure litter there:
+  link "conky"               ".config/conky"             linux
   # TigerVNC (1.16+ layout: config in ~/.config/tigervnc; password is a
   # machine-local file there too — created once with `vncpasswd`)
-  link "vnc/config"           ".config/tigervnc/config"
+  link "vnc/config"           ".config/tigervnc/config"   linux
 
   # 3. Plugin managers.
   #  3a. tmux plugins: clone every `set -g @plugin 'user/repo'` from
