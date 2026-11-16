@@ -17,13 +17,25 @@
 # UNVERIFIED-ON-MACOS — everything in this file has been exercised on Linux (and against stubbed
 # BSD tools), never on the actual MacBook. A future agent: run ./install.sh there, tick every box,
 # then DELETE this block and say so in the commit message. If a box fails, fix the line it names.
-#   [ ] step 1/1b: logs "[install] fzf <ver> already managed here" (Homebrew's fzf is >= 0.48) —
+# macOS pass 2026-11-15/16 (MacBookPro14,2, Sequoia 15.7.5 via OCLP): full run completed —
+# 210 formulae (~23 h: Intel gets few bottles now), all links correct, exit clean. One real bug
+# found and FIXED in step 3b: macOS ships no timeout(1) so PlugInstall could never run there.
+# Only the two Linux-only boxes below remain unticked; delete this block when they pass.
+#   [x] step 1/1b: logs "[install] fzf <ver> already managed here" (Homebrew's fzf is >= 0.48) —
 #       if it instead fetches a release, that branch was never reachable on a Mac before now.
-#   [ ] step 1c prompts "Install these GUI apps? [y/N]" and installs NOTHING on bare Enter;
+#       VERIFIED 2026-11-16: PATH branch logged "fzf on PATH (0.72.0) already supports --zsh";
+#       the ~/.local/bin fetch branch stays unreached while brew's fzf is current — by design.
+#   [x] step 1c prompts "Install these GUI apps? [y/N]" and installs NOTHING on bare Enter;
 #       `--yes` still installs them. Verify with an app already present: it must not reappear.
-#   [ ] step 2 creates exactly 5 links (.zshrc, .vim, .tmux, .tmux.conf, .config/mc) and prints
+#       VERIFIED 2026-11-16: bare Enter and no-tty both install nothing; installed blackhole-2ch
+#       never reappeared in the missing list (--yes path is shared code, untouched).
+#   [x] step 2 creates exactly 5 links (.zshrc, .vim, .tmux, .tmux.conf, .config/mc) and prints
 #       "not used on macos — skipping" for the other 12; ~/.config stays otherwise empty.
-#   [ ] `zsh -i -c exit` is silent, `alias ll` shows '-G' (not --color), no LS_COLORS/list-colors.
+#       VERIFIED 2026-11-16: exactly those 5 land and ~/.config gained nothing else; correction:
+#       it is 17 skip lines, not 12 (list grew since this box was written).
+#   [x] `zsh -i -c exit` is silent, `alias ll` shows '-G' (not --color), no LS_COLORS/list-colors.
+#       VERIFIED 2026-11-16 in a real terminal; NB: with NO tty zsh prints "can't change option:
+#       zle" — harness artifact of piping an interactive shell, not a config bug.
 #   [ ] step 1d was only ever exercised with a STUBBED apt-cache (Ubuntu/Pop ship tmux 3.4 while
 #       upstream is 3.8, and this box has no passwordless sudo to compile). Without sudo it must
 #       only WARN and exit 0 — ./install.sh is run unprivileged on purpose here; if you find yourself
@@ -482,7 +494,12 @@ main() {
     log "installing vim plugins (vim-plug)"
     # Headless normal mode (not -es/-Es Ex mode: vim-plug's s:prepare errors
     # there with E31) + --sync so PlugInstall waits for jobs/hooks, and stdin
-    # closed so nothing waits on a tty. timeout bounds any hook stall.
+    # closed so nothing waits on a tty. timeout bounds any hook stall — but it is
+    # best-effort: macOS ships no timeout(1) (GNU coreutils installs gtimeout),
+    # and the hard-coded call made THIS step fail permanently on the MacBook
+    # (verified 2026-11-15/16: "timeout: command not found" -> PlugInstall never
+    # ran, ~/.vim/plugged stayed empty). What actually prevents the tty stall is
+    # </dev/null + --not-a-term below; timeout only bounds a hung hook.
     #
     # NB: redirect stderr AS WELL AS stdout (2>&1). Vim only honours our closed
     # stdin while it has no console to fall back on: if fd 2 is still the pty,
@@ -493,7 +510,13 @@ main() {
     # its own process group (mch_init), that pgrp is a *background* pgrp of the
     # terminal and the read earns it SIGTTIN: state T in `ps`, invisible stall
     # until timeout fires. With no tty on any stdio fd vim stays fully dumb.
-    timeout 600 vim -u "$REPO/.vim/.vimrc" -n -i NONE --not-a-term \
+    local tmo=""
+    command -v timeout  >/dev/null 2>&1 && tmo="timeout 600"
+    [[ -z "$tmo" ]] && command -v gtimeout >/dev/null 2>&1 && tmo="gtimeout 600"
+    # $tmo unquoted on purpose: word-splits to `timeout 600`, or vanishes entirely
+    # when neither timeout(1) nor gtimeout(1) exists. Bare words, no paths — safe.
+    # shellcheck disable=SC2086
+    $tmo vim -u "$REPO/.vim/.vimrc" -n -i NONE --not-a-term \
       +"set nomore" +"PlugInstall --sync" +"qa!" </dev/null >/dev/null 2>&1 \
       || warn "PlugInstall failed — open vim and run :PlugInstall manually"
   fi
